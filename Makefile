@@ -1,7 +1,7 @@
 CC      = g++ 
 CPPFLAGS  = -Wall -O
 INCLUDEFLAGS = 
-LDFLAGS = -L /Users/yintianyu/research/eda/EDAxiaofendui/lib -l libssdboutputter -l libssdbreader
+LDFLAGS = -L ./lib -l libssdboutputter -l libssdbreader
 OBJS    = main.o compressor.o
 TARGETS = edaxiaofendui 
 
