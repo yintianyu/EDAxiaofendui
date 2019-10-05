@@ -1,0 +1,62 @@
+signal name: v(0)
+max absolute error: 0.000000000000000e+00, time: 0.000000000000000e+00
+max relative error: 0.000000000000000e+00, time: 0.000000000000000e+00
+stardard deviation of absolute error: 0.000000000000000e+00
+stardard deviation of relative error: 0.000000000000000e+00
+Basic precision is satisfied, PASS
+signal name: v(vdd)
+max absolute error: 1.000000082740371e-11, time: 0.000000000000000e+00
+max relative error: 5.555556015224283e-12, time: 0.000000000000000e+00
+stardard deviation of absolute error: 1.000000082740371e-11
+stardard deviation of relative error: 5.555556015224283e-12
+Basic precision is satisfied, PASS
+signal name: v(xoa.net38)
+max absolute error: 1.602057375649224e-11, time: 1.000000000000000e-04
+max relative error: 9.310405573054165e-10, time: 1.400000000000000e-04
+stardard deviation of absolute error: 5.067246551578489e-12
+stardard deviation of relative error: 4.663926096257387e-11
+Basic precision is satisfied, PASS
+signal name: v(xoa.net37)
+max absolute error: 1.010997952022308e-10, time: 1.000000000000000e-04
+max relative error: 5.695329195267697e-11, time: 2.000000000000000e-05
+stardard deviation of absolute error: 1.216007321386643e-11
+stardard deviation of relative error: 9.365353535805915e-12
+Basic precision is satisfied, PASS
+signal name: v(vss)
+max absolute error: 0.000000000000000e+00, time: 0.000000000000000e+00
+max relative error: 0.000000000000000e+00, time: 0.000000000000000e+00
+stardard deviation of absolute error: 0.000000000000000e+00
+stardard deviation of relative error: 0.000000000000000e+00
+Basic precision is satisfied, PASS
+signal name: v(xoa.net27)
+max absolute error: 1.922279002641858e-11, time: 1.000000000000000e-04
+max relative error: 4.725558278843339e-11, time: 1.000000000000000e-04
+stardard deviation of absolute error: 4.680490271938229e-12
+stardard deviation of relative error: 5.669264020608937e-12
+Basic precision is satisfied, PASS
+signal name: v(a)
+max absolute error: 0.000000000000000e+00, time: 0.000000000000000e+00
+max relative error: 0.000000000000000e+00, time: 0.000000000000000e+00
+stardard deviation of absolute error: 0.000000000000000e+00
+stardard deviation of relative error: 0.000000000000000e+00
+Basic precision is satisfied, PASS
+signal name: v(xoa.net29)
+max absolute error: 1.504735225310583e-11, time: 7.000000000000001e-05
+max relative error: 4.113806999035423e-11, time: 7.000000000000001e-05
+stardard deviation of absolute error: 5.941546659472913e-12
+stardard deviation of relative error: 8.874798298739944e-12
+Basic precision is satisfied, PASS
+signal name: v(y)
+max absolute error: 7.180145367158275e-12, time: 7.000000000000001e-05
+max relative error: 8.264839734819098e-12, time: 7.000000000000001e-05
+stardard deviation of absolute error: 4.877693182286260e-12
+stardard deviation of relative error: 5.381676584418177e-12
+Basic precision is satisfied, PASS
+signal name: v(b)
+max absolute error: 0.000000000000000e+00, time: 0.000000000000000e+00
+max relative error: 0.000000000000000e+00, time: 0.000000000000000e+00
+stardard deviation of absolute error: 0.000000000000000e+00
+stardard deviation of relative error: 0.000000000000000e+00
+Basic precision is satisfied, PASS
+
+Precision score: 10
