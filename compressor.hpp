@@ -13,12 +13,12 @@
 
 class Compressor{
     public:
-    Compressor(std::string &input_filename, std::string &output_filename):input_filename_(input_filename),
-    output_filename_(output_filename){
+    Compressor(std::string &input_filename, std::string &output_filename):output_filename_(output_filename), 
+    reader(input_filename){
     }
     void compress();
     private:
-    std::string input_filename_;
+    WaveformReaderForCompetition reader;
     std::string output_filename_;
 };
 

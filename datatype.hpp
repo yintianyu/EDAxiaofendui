@@ -9,6 +9,7 @@
 #define DATATYPE_HPP
 
 typedef double original_data;
+typedef char compressed_diff; // Can be modify to short if 16 bits are needed
 
 
 #endif

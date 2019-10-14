@@ -11,13 +11,21 @@
 #include <cstdio>
 #include <iostream>
 
+#include "./BasicException.h"
 #include "./WaveformOutputterForCompetition.h"
 
 void GenerateSignalNames(std::vector<std::string>& selectedSignalNames)
 {
     selectedSignalNames.push_back("v(0)");
     selectedSignalNames.push_back("v(1)");
+    selectedSignalNames.push_back("v(2)");
+    selectedSignalNames.push_back("v(3)");
     selectedSignalNames.push_back("v(vdd)");
+    selectedSignalNames.push_back("v(vin)");
+    selectedSignalNames.push_back("v(a)");
+    selectedSignalNames.push_back("v(b)");
+    selectedSignalNames.push_back("v(n1)");
+    selectedSignalNames.push_back("v(n2)");
 }
 
 void OutputHead(
@@ -113,21 +121,28 @@ int main(int argc, const char** argv)
 
     std::string inputFile;
     GetInputFile(argc, argv, inputFile);
-    WaveformOutputterForCompetition outputter(inputFile);
 
     std::vector<std::string> selectedSignalNames;
+    GenerateSignalNames(selectedSignalNames); // just for example, you should add signal names that need to be output
+
     const double startTime = 0.0; // just for example, you should get the value in the Decompress program
     const double stopTime = 1e-7; // just for example, you should get the value in the Decompress program
-    GenerateSignalNames(selectedSignalNames); // just for example, you should add signal names that need to be output
-    OutputHead(&outputter, startTime, stopTime, selectedSignalNames); // output signal names to the waveform file
-
     const int pointsNumber = 100; // just for example, you should get the value in the Decompress program
     const int signalsNumber = selectedSignalNames.size();
     double* xValues = GenerateXValues(startTime, stopTime, pointsNumber); // just for example, you should get the values in the Decompress program
     double** sigValues = GenerateSignalValues(signalsNumber, pointsNumber); // just for example, you should get the values in the Decompress program
-    OutputData(&outputter, xValues, sigValues, signalsNumber, pointsNumber);
 
-    outputter.FinishOutput(); // do not forget to call it
+    try {
+        WaveformOutputterForCompetition outputter(inputFile);
+        OutputHead(&outputter, startTime, stopTime, selectedSignalNames); // output signal names to the waveform file
+        OutputData(&outputter, xValues, sigValues, signalsNumber, pointsNumber);
+        outputter.FinishOutput(); // do not forget to call it
+    }
+    catch (const BasicException& exception) {
+        printf(exception.GetMessage());
+        printf("\n");
+        exit(-1);
+    }
 
     DestoryXValues(xValues);
     DestorySignalValues(sigValues, signalsNumber);

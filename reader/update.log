@@ -1,0 +1,2 @@
+2019/10/9 Add a method to handle exceptions. Related codes are updated in ReaderDemo.cc.
+          Note: You must catch the 'BasicException' while calling all supplied APIs to read data from a waveform file.

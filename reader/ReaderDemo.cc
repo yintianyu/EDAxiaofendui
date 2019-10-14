@@ -11,25 +11,22 @@
 #include <cstdio>
 #include <iostream>
 
+#include "./BasicException.h"
 #include "./WaveformReaderForCompetition.h"
 
-void ReadAllSignals(WaveformReaderForCompetition* reader)
+void GetData(WaveformReaderForCompetition* reader)
 {
     assert(reader);
-    reader->Read(); //  read all signals
+    while(!reader->IsDataFinished()) {
+        reader->ReadNextPointData();
+        reader->GetNextXValue(); // you can store or print this value
+        for(int i = 0; i < reader->GetSignalCount(); i++) {
+            reader->GetNextSignalValue(i); // you can store or print this value
+        }
+    }
 }
 
-void ReadSpecifiedSignals(WaveformReaderForCompetition* reader)
-{
-    assert(reader);
-    std::set<std::string> selectedSignalNames;
-    selectedSignalNames.insert("v(0)"); // just for example, you should insert a specified signal name which can be found in the input file
-    selectedSignalNames.insert("v(1)");
-    selectedSignalNames.insert("v(vdd)");
-    reader->Read(selectedSignalNames); // read specified signals
-}
-
-void ReadDataAndDump(WaveformReaderForCompetition* reader)
+void GetDataAndDump(WaveformReaderForCompetition* reader)
 {
     assert(reader);
     int pointsNumber = 0;
@@ -44,16 +41,30 @@ void ReadDataAndDump(WaveformReaderForCompetition* reader)
     printf("Finish reading data, total points number: %d\n", pointsNumber);
 }
 
-void ReadData(WaveformReaderForCompetition* reader)
+void ReadDataOfAllSignals(WaveformReaderForCompetition* reader)
 {
     assert(reader);
-    while(!reader->IsDataFinished()) {
-        reader->ReadNextPointData();
-        reader->GetNextXValue();
-        for(int i = 0; i < reader->GetSignalCount(); i++) {
-            reader->GetNextSignalValue(i);
-        }
-    }
+    reader->Read(); //  read all signals
+    GetData(reader); // call GetDataAndDump(reader) instead if you want to dump data values
+}
+
+void GenerateSignalNames(std::set<std::string>& selectedSignalNames)
+{
+    /**
+     * just for example, you should insert specified signal names which can be found in the input file
+     */
+    selectedSignalNames.insert("v(0)");
+    selectedSignalNames.insert("v(1)");
+    selectedSignalNames.insert("v(vdd)");
+}
+
+void ReadDataOfSpecifiedSignals(WaveformReaderForCompetition* reader)
+{
+    assert(reader);
+    std::set<std::string> selectedSignalNames;
+    GenerateSignalNames(selectedSignalNames);
+    reader->Read(selectedSignalNames); // read specified signals
+    GetData(reader); // call GetDataAndDump(reader) instead if you want to dump data values
 }
 
 void GetInputFile(int argc, const char** argv, std::string& inputFile)
@@ -77,21 +88,18 @@ int main(int argc, const char** argv)
 
     std::string inputFile;
     GetInputFile(argc, argv, inputFile);
-    WaveformReaderForCompetition reader(inputFile);
 
-    /**
-     * read all signals and get data
-     */
-    ReadAllSignals(&reader);
-    ReadData(&reader);
-//    ReadDataAndDump(&reader);
-
-    /**
-     * read specified signals and get data
-     */
-    ReadSpecifiedSignals(&reader);
-    ReadData(&reader);
-//    ReadDataAndDump(&reader);
+    try {
+        WaveformReaderForCompetition reader(inputFile);
+        ReadDataOfAllSignals(&reader); // read all signals and get data
+        //ReadDataOfSpecifiedSignals(&reader); // if only need to read data of some specified signals, call this function
+    }
+    catch (const BasicException& exception)
+    {
+        printf(exception.GetMessage());
+        printf("\n");
+        exit(-1);
+    }
 
     return 0;
 }
