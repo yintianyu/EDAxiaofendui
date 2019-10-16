@@ -11,20 +11,20 @@
 int A_Regulation::pieceStarts[8] = {0,16,32,64,128,256,512,1024};
 int A_Regulation::minInterval[8] = {1, 1, 2, 4,  8, 16, 32,  64};
 
-void A_Regulation::compress(const std::vector<original_data> &input_diff, original_data max, 
+void A_Regulation::compress(const std::vector<original_data> &input_diff, original_data max,
                                   std::vector<compressed_diff> &output_compressed_diff){
 
     int whichPiece;
-	int loc;	
+	int loc;
 	output_compressed_diff.clear();
-	
+
     std::vector<original_data>::const_iterator it_in;
 	for(it_in=input_diff.begin();it_in !=input_diff.end(); it_in++)
     {
 		std::bitset<8> bitCode;      //default：every bit is 0;
         bitCode[7] = ( (*it_in)>=0 )? 1 : 0;
         original_data quantify_double = fabs( *it_in)/max *2048;
-		int quantify = floor(quanti_double);
+		int quantify = floor(quantify_double);
 		if(quantify >=128){
 			bitCode[6]=1;
 			if(quantify >=512){
@@ -43,10 +43,10 @@ void A_Regulation::compress(const std::vector<original_data> &input_diff, origin
 				bitCode[5]=0;
 				bitCode[4] = (quantify >=16)?  1: 0;
 			}
-		}		 
+		}
 		whichPiece = int( ( (bitCode<<1) >>5 ).to_ulong() ) ;
 		loc= floor( (quantify-pieceStarts[whichPiece])/minInterval[whichPiece] );
-		if(loc == 16)    
+		if(loc == 16)
 			loc=loc-1;
 		std::bitset<8> innerCode(loc);
 		bitCode = bitCode| innerCode;
@@ -54,9 +54,9 @@ void A_Regulation::compress(const std::vector<original_data> &input_diff, origin
     }
 }
 
-void A_Regulation::decompress(const std::vector<compressed_diff> &input_diff, original_data max, 
+void A_Regulation::decompress(const std::vector<compressed_diff> &input_diff, original_data max,
                                     std::vector<original_data> &output_original_data){
-    
+
 	int whichPiece;
 	int loc;
 	original_data odata;
