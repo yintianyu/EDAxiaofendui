@@ -17,15 +17,16 @@ class Regulation{
     Regulation(){
 
     }
+	virtual ~Regulation(){}
     // Virtual Function: compress
     // Input: vector<original_data> input_diff, original_data max, [output] std::vector<compressed_diff> output_compressed_diff
     // Output: None
-    virtual void compress(const std::vector<original_data> &input_diff, original_data max, std::vector<compressed_diff> &output_compressed_diff);
+    virtual void compress(const std::vector<original_data> &input_diff, original_data max, std::vector<compressed_diff> &output_compressed_diff){};
     // Virtual Function: decompress
     // Input: vector<compressed_diff> input_diff, original_data max,  [output] std::vector<compressed_diff> output_compressed_diff
     // Output: NOne
-    virtual void decompress(const std::vector<compressed_diff> &input_diff, original_data max, std::vector<original_data> &output_original_data);
-    virtual ~Regulation(){}
+    virtual void decompress(const std::vector<compressed_diff> &input_diff, original_data max, std::vector<original_data> &output_original_data){};
+    
 };
 
 #endif

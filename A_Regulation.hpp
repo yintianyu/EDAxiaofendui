@@ -3,6 +3,8 @@
  * Author: Tianyu Yin
  * Create Date: 2019/10/06
  * Description: Define class A_Regulation
+ * Modifier: Steven Zhang
+ * Modify Date: 2019/10/14
  */
 
 #ifndef A_REGULATION_HPP
@@ -12,10 +14,13 @@
 
 class A_Regulation : public Regulation{
     public:
+	static int pieceStarts[8] ;
+	static int minInterval[8] ;
     A_Regulation(){}
-    compressed_diff compress(original_data input_diff);
-    original_data decompress(compressed_diff input_diff);
-    ~A_Regulation(){}
+	~A_Regulation(){}
+    void compress(const std::vector<original_data> &input_diff, original_data max, std::vector<compressed_diff> &output_compressed_diff);
+    void decompress(const std::vector<compressed_diff> &input_diff, original_data max, std::vector<original_data> &output_original_data);
+    
 };
 
 #endif
