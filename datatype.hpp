@@ -7,9 +7,9 @@
 
 #ifndef DATATYPE_HPP
 #define DATATYPE_HPP
+#include <bitset>
 
 typedef double original_data;
-typedef char compressed_diff; // Can be modify to short if 16 bits are needed
 typedef double x_value;
 typedef unsigned char index_value;
 
@@ -22,5 +22,7 @@ typedef unsigned char index_value;
 
 #define THRESHOLD_HOMO_INHOMO (1e-4) // 差值的最大值最小值之差的阈值，决定采用均匀量化还是非均匀量化
 
+//typedef char compressed_diff; // Can be modify to short if 16 bits are needed
+typedef std::bitset<8> compressed_diff;      
 
 #endif
