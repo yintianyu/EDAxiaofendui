@@ -1,72 +1,88 @@
 /*
  * File: u_Regulations.cpp
  * Author: Guozhu Xin
- * Create Date: 2019/10/11
+ * Create Date: 2019/10/17
  * Description: u quantization
  */
 
 #include "u_Regulation.hpp"
-#include <cassert>
-#include "./reader/WaveformReaderForCompetition.h"
 
-compressed_diff u_Regulation::compress(original_data input_diff) {
-    assert(input_diff >= 0 && input_diff <= 1);
-    compressed_diff res;
-    if (input_diff >= 127.0 / 255) {
-        res = input_diff == 1 ? 255 : 224 + (input_diff - 127.0 / 255) * 255.0 / 4;
-    } 
-    else if (input_diff >= 63.0 / 255) {
-        res = 192 + (input_diff - 63.0 / 255) * 255.0 / 2;
-    } 
-    else if (input_diff >= 31.0 / 255) {
-        res = 160 + (input_diff - 31.0 / 255) * 255.0;
+void u_Regulation :: compress(const std::vector<original_data> &input_diff, original_data max, std::vector<compressed_diff> &output_compressed_diff) {
+    compressed_diff t;
+    char s = t.size();
+    unsigned int maxVal = 1 << (s-1);
+    for (auto i = input_diff.begin(); i != input_diff.end(); ++i) {
+        compressed_diff res;
+        original_data normDiff = abs(*i) / max;
+        if (normDiff >= 127.0 / 255) {
+            res = normDiff == 1 ? (maxVal-1) : maxVal*7/8 + (normDiff - 127.0 / 255) * 255 * maxVal / 1024;
+        } 
+        else if (normDiff >= 63.0 / 255) {
+            res = maxVal*6/8 + (normDiff - 63.0 / 255) * 255.0 * maxVal / 512;
+        } 
+        else if (normDiff >= 31.0 / 255) {
+            res = maxVal*5/8 + (normDiff - 31.0 / 255) * 255.0 * maxVal / 256;
+        }
+        else if (normDiff >= 15.0 / 255) {
+            res = maxVal*4/8 + (normDiff - 15.0 / 255) * 255.0 * maxVal / 128;
+        }
+        else if (normDiff >= 7.0 / 255) {
+            res = maxVal*3/8 + (normDiff - 7.0 / 255) * 255.0 * maxVal / 64;
+        }
+        else if (normDiff >= 3.0 / 255) {
+            res =  maxVal*2/8 + (normDiff - 3.0 / 255) * 255.0 * maxVal / 32;
+        }
+        else if (normDiff >= 1.0 / 255) {
+            res =  maxVal*1/8 + (normDiff - 1.0 / 255) * 255.0 * maxVal / 16;
+        }
+        else {
+            res = normDiff * 255.0 * maxVal / 8;
+        }
+        res[s-1] = *i < 0 ? 1 : 0;
+        output_compressed_diff.push_back(res);
     }
-    else if (input_diff >= 15.0 / 255) {
-        res = 128 + (input_diff - 15.0 / 255) * 510.0;
-    }
-    else if (input_diff >= 7.0 / 255) {
-        res = 96 + (input_diff - 7.0 / 255) * 1020.0;
-    }
-    else if (input_diff >= 3.0 / 255) {
-        res = 64 + (input_diff - 3.0 / 255) * 2040.0;
-    }
-    else if (input_diff >= 1.0 / 255) {
-        res = 32 + (input_diff - 1.0 / 255) * 4080.0;
-    }
-    else {
-        res = input_diff * 8160.0;
-    }
-    return res;
 }
 
-original_data u_Regulation::decompress(compressed_diff input_diff) {
+void u_Regulation :: decompress(const std::vector<compressed_diff> &input_diff, original_data max, std::vector<original_data> &output_original_data) {
+    compressed_diff t;
+    char s = t.size();
+    unsigned int maxVal = 1 << (s-1);
     original_data res;
-    if (input_diff >= 224) {
-        res = 127.0 / 255 + (original_data) (input_diff - 224) * 4.0 / 255;
-    } 
-    else if (input_diff >= 192) {
-        res = 63.0 / 255 + (original_data) (input_diff - 192) * 2.0 / 255;
-    } 
-    else if (input_diff >= 160) {
-        res = 31.0 / 255 + (original_data) (input_diff - 160) / 255;
+    for (auto i = input_diff.begin(); i != input_diff.end(); ++i) {
+        auto j = (*i);
+        j[s-1] = 0;
+        auto num = j.to_ulong();
+        double sig = (*i)[s-1] == 1 ? -1 : 1; 
+        if (num >= maxVal*7/8) {
+            res = (127.0 / 255 + (original_data) (num - maxVal*7/8) * 1024 / (255*maxVal)) * max;
+        } 
+        else if (num >=  maxVal*6/8) {
+            res = (63.0 / 255 + (original_data) (num - maxVal*6/8) * 512 / (255*maxVal)) * max;
+        } 
+        else if (num >= maxVal*5/8) {
+            res = (31.0 / 255 + (original_data) (num - maxVal*5/8) * 256 / (255*maxVal)) * max;
+        }
+        else if (num >= maxVal*4/8) {
+            res = (15.0 / 255 + (original_data) (num - maxVal*4/8) * 128 / (255*maxVal)) * max;
+        }
+        else if (num >= maxVal*3/8) {
+            res = (7.0 / 255 + (original_data) (num - maxVal*3/8) * 64 / (255*maxVal)) * max;
+        }
+        else if (num >=  maxVal*2/8) {
+            res = (3.0 / 255 + (original_data) (num - maxVal*2/8) * 32 / (255*maxVal)) * max;
+        }
+        else if (num >= maxVal*1/8) {
+            res = (1.0 / 255 + (original_data) (num - maxVal*1/8) * 16 / (255*maxVal)) * max;
+        }
+        else {
+            res = max * (original_data) num * 8 / (255*maxVal);
+        }
+        res = res * sig;
+        output_original_data.push_back(res);
     }
-    else if (input_diff >= 128) {
-        res = 15.0 / 255 + (original_data) (input_diff - 128) / 510;
-    }
-    else if (input_diff >= 96) {
-        res = 7.0 / 255 + (original_data) (input_diff - 96) / 1020;
-    }
-    else if (input_diff >= 64) {
-        res = 3.0 / 255 + (original_data) (input_diff - 64) / 2040;
-    }
-    else if (input_diff >= 32) {
-        res = 1.0 / 255 + (original_data) (input_diff - 32) / 4080;
-    }
-    else {
-        res = (original_data) input_diff / 8160;
-    }
-    return res;
 }
+
+
 
 
 
