@@ -9,6 +9,8 @@
 #define COMPRESSOR_HPP
 
 #include <string>
+#include <vector>
+#include "datatype.hpp"
 #include "reader/WaveformReaderForCompetition.h"
 
 class Compressor{
@@ -20,6 +22,7 @@ class Compressor{
     private:
     WaveformReaderForCompetition reader;
     std::string output_filename_;
+    std::vector<std::string> signal_names;
 };
 
 #endif
