@@ -10,11 +10,14 @@
 #include "compressor.hpp"
 
 int main(int argc, char* argv[]){
-    if(argc < 4){
+    if(argc < 3){
         std::cerr << "Invalid arguments" << std::endl;
         exit(-1);
     }
     std::string input_filename(argv[1]);
     std::string output_filename(argv[2]);
-    std::string decompress_filename(argv[3]);
+    Compressor *compressor = new Compressor(input_filename, output_filename);
+    compressor->compress();
+    delete compressor;
+    return 0;
 }

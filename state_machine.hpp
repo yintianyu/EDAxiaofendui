@@ -33,12 +33,17 @@ class State_Machine{
     std::ofstream &output_fstream;
 
     int c_count; // Frames need compressing
-    std::vector<int> c_idxes;
+    std::vector<uint8_t> c_idxes;
+
+    x_value end_time; // 最后一帧的时间
 
     void save_period();
     void reset();
     void perform_regulation(const std::vector<std::vector<original_data>> &to_be_compressed, const std::vector<original_data> &max_diff, const std::vector<original_data> &min_diff, 
         std::vector<std::vector<compressed_diff>> &compressed);
+
+    compressed_x x_value_compress(x_value x); // 压缩x值
+    void write_period_to_file(const std::vector<std::vector<compressed_diff>> &compressed, const std::vector<original_data> &diff_max, bool predict);
     public:
     State_Machine(std::ofstream &output_fstream, int signal_count);
     void act(const std::vector<original_data> &data, x_value time, int index);

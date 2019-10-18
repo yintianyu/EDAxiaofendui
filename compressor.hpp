@@ -8,21 +8,33 @@
 #ifndef COMPRESSOR_HPP
 #define COMPRESSOR_HPP
 
+#include <fstream>
 #include <string>
 #include <vector>
 #include "datatype.hpp"
+#include "state_machine.hpp"
 #include "reader/WaveformReaderForCompetition.h"
 
 class Compressor{
     public:
-    Compressor(std::string &input_filename, std::string &output_filename):output_filename_(output_filename), 
-    reader(input_filename){
+    Compressor(const std::string &input_filename, const std::string &output_filename):output_fstream(output_filename, std::ios::binary), 
+    reader(input_filename), state_machine(nullptr){
+        identifier = 0x1234;
     }
     void compress();
+    ~Compressor(){
+        output_fstream.close();
+    }
     private:
     WaveformReaderForCompetition reader;
-    std::string output_filename_;
     std::vector<std::string> signal_names;
+    std::ofstream output_fstream;
+    State_Machine *state_machine;
+    int signal_count;
+
+    int identifier;
+
+    void write_metadata_to_file();
 };
 
 #endif

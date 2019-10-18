@@ -7,6 +7,7 @@
 
 #include "state_machine.hpp"
 #include "A_Regulation.hpp"
+#include "Homo_Regulation.hpp"
 
 #define abs(x) ((x) > 0 ? (x) : -(x))
 
@@ -59,6 +60,7 @@ void State_Machine::act(const std::vector<original_data> &data, x_value time, in
             reference_sum += abs(base[i]);
         }
         if(diff_sum / reference_sum > BETA || frames.size() >= ALPHA){
+            end_time = time;
             save_period();
             reset();
         }
@@ -73,16 +75,15 @@ void State_Machine::save_period(){
     std::vector<std::vector<original_data>> to_be_compressed(signal_count);
     std::vector<original_data> diff_max(signal_count);
     std::vector<original_data> diff_min(signal_count);
-    if(c_count > YITA){
+    if(c_count > YITA){ // 全部都压缩存储
         for(int i = 0;i < signal_count;++i){
             compressed[i].reserve(frames.size());
             to_be_compressed[i].reserve(frames.size());
             diff_max[i] = -10000;
             diff_min[i] = 10000;
         }
-        // 全部都压缩存储
         predict = false;
-        for(auto &frame : frames){
+        for(const auto &frame : frames){
             for(int i = 0;i < signal_count;++i){
                 original_data diff = frame.values[i] - (base[i] + slope[i] * (frame.x - base_time));
                 if(diff > diff_max[i]){
@@ -94,20 +95,99 @@ void State_Machine::save_period(){
                 to_be_compressed[i].push_back(diff);
             }
         }
-
     }
+    else{ // 采用预测
+        for(int i = 0;i < signal_count;++i){
+            compressed[i].reserve(c_frames.size());
+            to_be_compressed[i].reserve(c_frames.size());
+            diff_max[i] = -10000;
+            diff_min[i] = 10000;
+        }
+        predict = true;
+        for(const auto &frame : c_frames){
+            for(int i = 0;i < signal_count;++i){
+                original_data diff = frame.values[i] - (base[i] + slope[i] * (frame.x - base_time));
+                if(diff > diff_max[i]){
+                    diff_max[i] = diff;
+                }
+                if(diff < diff_min[i]){
+                    diff_min[i] = diff;
+                }
+                to_be_compressed[i].push_back(diff);
+            }
+        }
+    }
+    perform_regulation(to_be_compressed, diff_max, diff_min, compressed);
+    write_period_to_file(compressed, diff_max, predict);
 }
 
 void State_Machine::perform_regulation(const std::vector<std::vector<original_data>> &to_be_compressed, const std::vector<original_data> &max_diff, const std::vector<original_data> &min_diff, 
         std::vector<std::vector<compressed_diff>> &compressed){
     for(int i = 0;i < signal_count;i++){
         if(max_diff[i] - min_diff[i] >= THRESHOLD_HOMO_INHOMO){ // 非均匀量化
-            Regulation *regulator = new A_Regulation(); // TODO: 先统一用A律，怎么把C律用上再改
+            Regulation *regulator = new A_Regulation(); // TODO: 先统一用A律，怎么把u律用上再改
             regulator->compress(to_be_compressed[i], max_diff[i], compressed[i]);
             delete regulator;
         }
         else{ // 均匀量化
-            
+            Regulation *regulator = new Homo_Regulation();
+            regulator->compress(to_be_compressed[i], max_diff[i], compressed[i]);
+            delete regulator;
         }
     }
+}
+
+compressed_x x_value_compress(x_value x){
+    compressed_x compressed;
+    assert(x < 4096);
+    int count = 0;
+    while(x < 2048){
+        x *= 2;
+        count += 1;
+    }
+    int val = (int)x;
+    compressed = val << 4 | count;
+    return compressed;
+}
+
+void State_Machine::write_period_to_file(const std::vector<std::vector<compressed_diff>> &compressed, const std::vector<original_data> &diff_max, bool predict){
+    // 先写入时间片头
+    assert(output_fstream);
+    char frame_count = frames.size();
+    output_fstream.write(&frame_count, sizeof(frame_count)); // 帧数N
+    output_fstream.write((char*)&predict, sizeof(char)); // 是否预测
+    output_fstream.write((char*)&signal_count, sizeof(uint16_t)); // 信号数量
+    output_fstream.write((char*)&base_time, sizeof(base_time)); // 开始时间（未压缩）
+    output_fstream.write((char*)&end_time, sizeof(end_time)); // 结束时间（未压缩）
+    for(int i = 0;i < signal_count;++i){
+        output_fstream.write((char*)&diff_max[i], sizeof(diff_max[i])); // 每个信号的误差最大值
+    }
+    for(int i = 0;i < signal_count;++i){
+        output_fstream.write((char*)&base[i], sizeof(base[i])); // 每个信号的base
+    }
+    for(int i = 1;i < frame_count;++i){
+        compressed_x tmp = x_value_compress(frames[i].x - frames[i-1].x); // 压缩每个time的step
+        output_fstream.write((char*)&tmp, sizeof(tmp)); // 一共(frame_count - 1)个uint16
+    }
+
+    if(predict){
+        uint16_t c_frames_number = c_idxes.size();
+        output_fstream.write((char*)&c_frames_number, sizeof(c_frames_number)); // 有多少帧需要被压缩
+        for(int i = 0;i < c_frames_number;++i){
+            output_fstream.write((char*)&c_idxes[i], sizeof(c_idxes[i])); // 记录每个被压缩的帧的编号
+        }
+        for(int i = 0;i < c_frames_number;++i){
+            for(int j = 0;j < signal_count;++j){
+                output_fstream.write((char*)&compressed[i][j], sizeof(compressed[i][j])); // 存储压缩后的差值
+            }
+        }
+    }
+    else{ // 不用预测那就不需要写有多少帧被压缩了，直接上差值
+        for(int i = 0;i < frame_count;++i){
+            for(int j = 0;j < signal_count;++j){
+                output_fstream.write((char*)&compressed[i][j], sizeof(compressed[i][j])); // 存储压缩后的差值
+            }
+        }
+    }
+
 }
