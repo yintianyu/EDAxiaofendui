@@ -12,8 +12,6 @@
 
 class Homo_Regulation : public Regulation{
     public:
-	static int pieceStarts[8] ;
-	static int minInterval[8] ;
     Homo_Regulation(){}
 	~Homo_Regulation(){}
     void compress(const std::vector<original_data> &input_diff, original_data max, std::vector<compressed_diff> &output_compressed_diff);

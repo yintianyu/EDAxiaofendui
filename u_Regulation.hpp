@@ -9,12 +9,13 @@
 #define U_REGULATION_HPP
 
 #include "Regulation.hpp"
+#include <math.h>
 
 class u_Regulation : public Regulation{
     public:
     u_Regulation(){}
-    compressed_diff compress(original_data input_diff);
-    original_data decompress(compressed_diff input_diff);
+    void compress(const std::vector<original_data> &input_diff, original_data max, std::vector<compressed_diff> &output_compressed_diff);
+    void decompress(const std::vector<compressed_diff> &input_diff, original_data max, std::vector<original_data> &output_original_data);
     ~u_Regulation(){}
 };
 
