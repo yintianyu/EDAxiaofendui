@@ -8,6 +8,7 @@
 #include <iostream>
 #include <string>
 #include "compressor.hpp"
+#include "datatype.hpp"
 
 int main(int argc, char* argv[]){
     if(argc < 3){
@@ -19,6 +20,7 @@ int main(int argc, char* argv[]){
     Compressor *compressor = new Compressor(input_filename, output_filename);
     compressor->compress();
     delete compressor;
+    std::cout << sizeof(compressed_diff_write) << std::endl;
     return 0;
 }
 

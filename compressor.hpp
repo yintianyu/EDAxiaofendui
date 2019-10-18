@@ -17,8 +17,7 @@
 
 class Compressor{
     public:
-    Compressor(const std::string &input_filename, const std::string &output_filename):output_fstream(output_filename, std::ios::binary), 
-    reader(input_filename), state_machine(nullptr){
+    Compressor(const std::string &input_filename, const std::string &output_filename):reader(input_filename), output_fstream(output_filename, std::ios::binary), state_machine(nullptr){
         identifier = 0x1234;
     }
     void compress();

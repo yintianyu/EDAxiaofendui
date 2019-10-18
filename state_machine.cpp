@@ -8,11 +8,13 @@
 #include "state_machine.hpp"
 #include "A_Regulation.hpp"
 #include "Homo_Regulation.hpp"
+#include <iostream>
 
 #define abs(x) ((x) > 0 ? (x) : -(x))
 
-State_Machine::State_Machine(std::ofstream &output_fstream, int signal_count):output_fstream(output_fstream), 
-signal_count(signal_count), base(signal_count), slope(signal_count){
+State_Machine::State_Machine(std::ofstream &output_fstream, int signal_count): signal_count(signal_count), 
+base(signal_count), slope(signal_count), output_fstream(output_fstream){
+    // std::cout << "State_Machine Constructor: " << signal_count << std::endl;
     c_count = 0;
 }
 
@@ -59,6 +61,7 @@ void State_Machine::act(const std::vector<original_data> &data, x_value time, in
             diff_sum += abs(data[i] - base[i]);
             reference_sum += abs(base[i]);
         }
+        // std::cout << "diff_sum / reference_sum = " << diff_sum / reference_sum << std::endl;
         if(diff_sum / reference_sum > BETA || frames.size() >= ALPHA){
             end_time = time;
             save_period();
@@ -75,6 +78,7 @@ void State_Machine::save_period(){
     std::vector<std::vector<original_data>> to_be_compressed(signal_count);
     std::vector<original_data> diff_max(signal_count);
     std::vector<original_data> diff_min(signal_count);
+    std::cout << "frame length: " << frames.size() << std::endl;
     if(c_count > YITA){ // 全部都压缩存储
         for(int i = 0;i < signal_count;++i){
             compressed[i].reserve(frames.size());
@@ -97,6 +101,7 @@ void State_Machine::save_period(){
         }
     }
     else{ // 采用预测
+        std::cout << "c_frames.size() = " << c_frames.size() << std::endl;
         for(int i = 0;i < signal_count;++i){
             compressed[i].reserve(c_frames.size());
             to_be_compressed[i].reserve(c_frames.size());
@@ -123,6 +128,7 @@ void State_Machine::save_period(){
 
 void State_Machine::perform_regulation(const std::vector<std::vector<original_data>> &to_be_compressed, const std::vector<original_data> &max_diff, const std::vector<original_data> &min_diff, 
         std::vector<std::vector<compressed_diff>> &compressed){
+    // std::cout << "In State_Machine::perform_regulation: " << to_be_compressed.size() << " " << to_be_compressed[0].size() << std::endl;
     for(int i = 0;i < signal_count;i++){
         if(max_diff[i] - min_diff[i] >= THRESHOLD_HOMO_INHOMO){ // 非均匀量化
             Regulation *regulator = new A_Regulation(); // TODO: 先统一用A律，怎么把u律用上再改
@@ -135,9 +141,10 @@ void State_Machine::perform_regulation(const std::vector<std::vector<original_da
             delete regulator;
         }
     }
+    // std::cout << compressed.size() << " " << compressed[0].size() << std::endl;
 }
 
-compressed_x x_value_compress(x_value x){
+compressed_x State_Machine::x_value_compress(x_value x){
     compressed_x compressed;
     assert(x < 4096);
     int count = 0;
@@ -172,22 +179,39 @@ void State_Machine::write_period_to_file(const std::vector<std::vector<compresse
 
     if(predict){
         uint16_t c_frames_number = c_idxes.size();
+        // std::cout << c_idxes.size() << " " << compressed.size() << " " << compressed[0].size() << std::endl;
+        assert(c_idxes.size() == compressed[0].size());
         output_fstream.write((char*)&c_frames_number, sizeof(c_frames_number)); // 有多少帧需要被压缩
         for(int i = 0;i < c_frames_number;++i){
             output_fstream.write((char*)&c_idxes[i], sizeof(c_idxes[i])); // 记录每个被压缩的帧的编号
         }
         for(int i = 0;i < c_frames_number;++i){
             for(int j = 0;j < signal_count;++j){
-                output_fstream.write((char*)&compressed[i][j], sizeof(compressed[i][j])); // 存储压缩后的差值
+                compressed_diff_write tmp = (compressed_diff_write)(compressed[j][i].to_ulong());
+                output_fstream.write((char*)&tmp, sizeof(tmp)); // 存储压缩后的差值
             }
         }
     }
     else{ // 不用预测那就不需要写有多少帧被压缩了，直接上差值
         for(int i = 0;i < frame_count;++i){
             for(int j = 0;j < signal_count;++j){
-                output_fstream.write((char*)&compressed[i][j], sizeof(compressed[i][j])); // 存储压缩后的差值
+                compressed_diff_write tmp = (compressed_diff_write)(compressed[j][i].to_ulong());
+                output_fstream.write((char*)&tmp, sizeof(tmp)); // 存储压缩后的差值
             }
         }
     }
 
+}
+
+void State_Machine::reset(){
+    base.clear();
+    slope.clear();
+    state = IDLE;
+    c_frames.clear();
+    frames.clear();
+    c_idxes.clear();
+}
+
+State_Machine::~State_Machine(){
+    save_period();
 }
