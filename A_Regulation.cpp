@@ -11,8 +11,8 @@
 int A_Regulation::pieceStarts_8bit[8] = {0,16,32,64,128,256,512,1024};
 int A_Regulation::minInterval_8bit[8] = {1, 1, 2, 4,  8, 16, 32,  64};
 
-int A_Regulation::pieceStarts_16bit[16] = {0,4096,8192,16384,32768,65536,131072,262144};
-int A_Regulation::minInterval_16bit[16] = {1,   1,   2,    4,    8,   16,    32,    64};
+int A_Regulation::pieceStarts_16bit[8] = {0,4096,8192,16384,32768,65536,131072,262144};
+int A_Regulation::minInterval_16bit[8] = {1,   1,   2,    4,    8,   16,    32,    64};
 
 // 8 bit compress() and decompress()
 // !! isn't inherited from Regulation
