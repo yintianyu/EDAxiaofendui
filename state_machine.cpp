@@ -160,10 +160,10 @@ compressed_x State_Machine::x_value_compress(x_value x){
 void State_Machine::write_period_to_file(const std::vector<std::vector<compressed_diff>> &compressed, const std::vector<original_data> &diff_max, bool predict){
     // 先写入时间片头
     assert(output_fstream);
-    char frame_count = frames.size();
-    output_fstream.write(&frame_count, sizeof(frame_count)); // 帧数N
+    uint8_t frame_count = frames.size();
+    output_fstream.write((char*)&frame_count, sizeof(frame_count)); // 帧数N
     output_fstream.write((char*)&predict, sizeof(char)); // 是否预测
-    output_fstream.write((char*)&signal_count, sizeof(uint16_t)); // 信号数量
+    // output_fstream.write((char*)&signal_count, sizeof(uint16_t)); // 信号数量
     output_fstream.write((char*)&base_time, sizeof(base_time)); // 开始时间（未压缩）
     output_fstream.write((char*)&end_time, sizeof(end_time)); // 结束时间（未压缩）
     for(int i = 0;i < signal_count;++i){
