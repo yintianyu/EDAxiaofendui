@@ -2,13 +2,13 @@
 #include <iostream>
 
 x_value Period::x_value_decompress(compressed_x compressed){
-    int count = compressed & 0xf;
-    x_value val = compressed >> 4;
-    // std::cout << "[x_value_decompress] count=" << count << std::endl;
-    // std::cout << "[x_value_decompress] val=" << val << std::endl;
+    int count = compressed & X_COUNT_MASK;
+    x_value val = compressed >> X_VALUE_DEVIDE;
+    std::cout << "[x_value_decompress] count=" << count << std::endl;
+    std::cout << "[x_value_decompress] val=" << val << std::endl;
     for(int i = 0;i < count;++i){ // FIX ME：暂时先用这么挫的
         val /= X_VALUE_STEP;
-        // std::cout << "[x_value_decompress] val=" << val << std::endl;
+        std::cout << "[x_value_decompress] val=" << val << std::endl;
     }
     return val;
 }

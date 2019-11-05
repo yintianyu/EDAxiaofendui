@@ -13,7 +13,7 @@
 typedef double original_data;
 typedef double x_value;
 typedef unsigned char index_value;
-typedef unsigned short compressed_x;
+typedef unsigned int compressed_x;
 
 
 // Threshold define
@@ -33,6 +33,10 @@ typedef std::bitset<8>  compressed_diff_8bit;
 
 typedef uint8_t compressed_diff_write; // 写入文件的类型，如果使用std::bitset<16> 则改为uint16_t
 
-#define X_VALUE_STEP (16) // x value压缩时每次的放大倍数
+#define X_VALUE_STEP (4) // x value压缩时每次的放大倍数
+#define X_VALUE_DEVIDE (8) // 有多少位用于存count
+#define X_VALUE_UP (24) // 有多少位用于存val
+#define X_VALUE_MAX (1 << X_VALUE_UP) // val最大值
+#define X_COUNT_MASK (~((-1) << X_VALUE_DEVIDE))
 
 #endif

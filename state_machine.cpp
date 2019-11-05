@@ -155,18 +155,18 @@ void State_Machine::perform_regulation(const std::vector<std::vector<original_da
 
 compressed_x State_Machine::x_value_compress(x_value x){
     compressed_x compressed;
-    assert(x < 4096);
+    assert(x < X_VALUE_MAX);
     int count = 0;
-    // std::cout << "[x_value_compress] x=" << x << std::endl;
-    while(x < 4096 / X_VALUE_STEP){
+    std::cout << "[x_value_compress] x=" << x << std::endl;
+    while(x < X_VALUE_MAX / X_VALUE_STEP){
         x *= X_VALUE_STEP;
-        // std::cout << "[x_value_compress] x=" << x << std::endl;
+        std::cout << "[x_value_compress] x=" << x << std::endl;
         count += 1;
     }
-    // std::cout << "[x_value_compress] count=" << count << std::endl;
+    std::cout << "[x_value_compress] count=" << count << std::endl;
     int val = (int)x;
-    assert(count < 16);
-    compressed = val << 4 | count;
+    assert(count < (1 << X_VALUE_DEVIDE));
+    compressed = val << X_VALUE_DEVIDE | count;
     return compressed;
 }
 
