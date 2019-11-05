@@ -21,6 +21,7 @@ class Compressor{
         identifier = IDENTIFER;
     }
     void compress();
+    void get_signal_names(std::vector<std::string> &output_signal_names);
     ~Compressor(){
         output_fstream.close();
     }

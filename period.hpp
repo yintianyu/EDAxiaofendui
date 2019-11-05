@@ -17,13 +17,15 @@
 
 struct X_CompressVals_Pair{
     X_CompressVals_Pair(x_value x, const std::vector<compressed_diff> &values):x(x), values(values){}
+    X_CompressVals_Pair():x(0){}
     x_value x;
-    const std::vector<compressed_diff> values;
+    std::vector<compressed_diff> values;
 };
 
 // Class to describe time period, similar to State_Machine
 class Period{
     private:
+    std::ifstream &input_fstream;
     int signal_count;
 
     std::vector<original_data> base;
@@ -33,7 +35,6 @@ class Period{
     enum State{IDLE, INIT, RUN} state;
     std::vector<X_CompressVals_Pair> c_frames;
     std::vector<X_CompressVals_Pair> frames;
-    std::ifstream &input_fstream;
     uint8_t frame_count;
 
     int c_count; // Frames need compressing
@@ -53,12 +54,14 @@ class Period{
     public:
     Period(std::ifstream &input_fstream, int signal_count, WaveformOutputterForCompetition &outputter):input_fstream(input_fstream), signal_count(signal_count), outputter(outputter){
         regulator = new A_Regulation();
+        period_count = 0;
     }
     static x_value x_value_decompress(compressed_x compressed);
     void decompress(const std::vector<int> &decompress_idxes, x_value &start, x_value &end);
     ~Period(){
         delete regulator;
     }
+    int period_count;
 };
 
 

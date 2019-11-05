@@ -47,6 +47,7 @@ class State_Machine{
     public:
     State_Machine(std::ofstream &output_fstream, int signal_count);
     void act(const std::vector<original_data> &data, x_value time, int index);
+    int period_count;
     ~State_Machine();
 };
 

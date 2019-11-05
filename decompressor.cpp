@@ -10,6 +10,7 @@
 #include <iostream>
 
 Decompressor::Decompressor(const std::string &input_filename, const std::string &output_filename):input_fstream(input_filename, std::ios::binary), outputter(output_filename){
+    std::cout << "[Decompressor] output_filename: " << output_filename << std::endl;
     identifer_expect = IDENTIFER;
 }
 
@@ -32,15 +33,18 @@ void Decompressor::decompress(const std::vector<std::string> &names){
             return;
         }
     }
-    
+    outputter.OutputHead(0, 0, names);
     x_value start = -1, end = -1;
     Period *period = new Period(input_fstream, signal_count, outputter);
-    while(!input_fstream.eof()){
+    int period_count = 0;
+    while(input_fstream.peek() != EOF){
         end = -1;
         period->decompress(decompress_idxes, start, end);
+        period_count += 1;
     }
-    outputter.OutputHead(start, end, names);
+    std::cout << "[Decompressor] period_count: " << period->period_count << std::endl;
     outputter.FinishOutput();
+    delete period;
 }
 
 int Decompressor::read_metadata (){
@@ -52,8 +56,12 @@ int Decompressor::read_metadata (){
     }
     input_fstream.read((char*)&signal_count, sizeof(signal_count));
     signal_names.resize(signal_count);
+    std::cout << "Decompress signal names:" << std::endl;
     for(int i = 0;i < signal_count;++i){
         input_fstream >> signal_names[i];
+        std::cout << signal_names[i] << std::endl;
     }
+    char tmp;
+    input_fstream.read((char*)&tmp, sizeof(char));
     return 0;
 }

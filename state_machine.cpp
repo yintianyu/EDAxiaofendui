@@ -16,9 +16,13 @@ State_Machine::State_Machine(std::ofstream &output_fstream, int signal_count): s
 base(signal_count), slope(signal_count), output_fstream(output_fstream){
     // std::cout << "State_Machine Constructor: " << signal_count << std::endl;
     c_count = 0;
+    period_count = 0;
 }
 
 void State_Machine::act(const std::vector<original_data> &data, x_value time, int index){
+    if(period_count == 0){
+        std::cout << "[DEBUG] Period: " << period_count << " time: " << time << " data[0]: " << data[0];// << std::endl;
+    }
     if(state == IDLE){
         base = data;
         base_time = time;
@@ -29,6 +33,7 @@ void State_Machine::act(const std::vector<original_data> &data, x_value time, in
         frames.push_back(X_Vals_Pair(time, data));
         c_idxes.clear();
         c_count = 0;
+        std::cout << std::endl;
         return;
     }
     if(state == INIT){
@@ -37,9 +42,11 @@ void State_Machine::act(const std::vector<original_data> &data, x_value time, in
         }
         state = RUN;
         frames.push_back(X_Vals_Pair(time, data));
+        std::cout << " slope[0]: " << slope[0] << std::endl;
         return;
     }
     if(state == RUN){
+        std::cout << std::endl;
         frames.push_back(X_Vals_Pair(time, data));
         bool isPredict = true;
         for(int i = 0;i < signal_count;++i){
@@ -78,7 +85,7 @@ void State_Machine::save_period(){
     std::vector<std::vector<original_data>> to_be_compressed(signal_count);
     std::vector<original_data> diff_max(signal_count);
     std::vector<original_data> diff_min(signal_count);
-    std::cout << "frame length: " << frames.size() << std::endl;
+    // std::cout << "frame length: " << frames.size() << std::endl;
     if(c_count > YITA){ // 全部都压缩存储
         for(int i = 0;i < signal_count;++i){
             compressed[i].reserve(frames.size());
@@ -101,7 +108,7 @@ void State_Machine::save_period(){
         }
     }
     else{ // 采用预测
-        std::cout << "c_frames.size() = " << c_frames.size() << std::endl;
+        // std::cout << "c_frames.size() = " << c_frames.size() << std::endl;
         for(int i = 0;i < signal_count;++i){
             compressed[i].reserve(c_frames.size());
             to_be_compressed[i].reserve(c_frames.size());
@@ -124,6 +131,8 @@ void State_Machine::save_period(){
     }
     perform_regulation(to_be_compressed, diff_max, diff_min, compressed);
     write_period_to_file(compressed, diff_max, predict);
+    std::cout << "[Compressor] Period No." << period_count << " frame number: " << frames.size() << std::endl;
+    period_count += 1;
 }
 
 void State_Machine::perform_regulation(const std::vector<std::vector<original_data>> &to_be_compressed, const std::vector<original_data> &max_diff, const std::vector<original_data> &min_diff, 
@@ -166,11 +175,15 @@ void State_Machine::write_period_to_file(const std::vector<std::vector<compresse
     // output_fstream.write((char*)&signal_count, sizeof(uint16_t)); // 信号数量
     output_fstream.write((char*)&base_time, sizeof(base_time)); // 开始时间（未压缩）
     output_fstream.write((char*)&end_time, sizeof(end_time)); // 结束时间（未压缩）
+    std::cout << "[Period Metadata] " << (int)frame_count << " " << predict << " " << base_time << " " << end_time << std::endl;
     for(int i = 0;i < signal_count;++i){
         output_fstream.write((char*)&diff_max[i], sizeof(diff_max[i])); // 每个信号的误差最大值
     }
     for(int i = 0;i < signal_count;++i){
         output_fstream.write((char*)&base[i], sizeof(base[i])); // 每个信号的base
+    }
+    for(int i = 0;i < signal_count;++i){
+        output_fstream.write((char*)&slope[i], sizeof(slope[i]));
     }
     for(int i = 1;i < frame_count;++i){
         compressed_x tmp = x_value_compress(frames[i].x - frames[i-1].x); // 压缩每个time的step
@@ -213,5 +226,6 @@ void State_Machine::reset(){
 }
 
 State_Machine::~State_Machine(){
-    save_period();
+    if(state == RUN)
+        save_period();
 }

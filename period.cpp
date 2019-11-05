@@ -1,4 +1,5 @@
 #include "period.hpp"
+#include <iostream>
 
 x_value Period::x_value_decompress(compressed_x compressed){
     int count = compressed & 0xff;
@@ -14,11 +15,17 @@ void Period::read_head(){
     input_fstream.read((char*)&base_time, sizeof(base_time)); // 开始时间
     frames[0].x = base_time;
     input_fstream.read((char*)&end_time, sizeof(end_time)); // 结束时间
+    diff_max.resize(signal_count);
+    base.resize(signal_count);
+    slope.resize(signal_count);
     for(int i = 0;i < signal_count;++i){
         input_fstream.read((char*)&diff_max[i], sizeof(diff_max[i])); // 每个信号的误差最大值
     }
     for(int i = 0;i < signal_count;++i){
         input_fstream.read((char*)&base[i], sizeof(base[i])); // 每个信号的base
+    }
+    for(int i = 0;i < signal_count;++i){
+        input_fstream.read((char*)&slope[i], sizeof(slope[i])); // 每个信号的base
     }
     for(int i = 1;i < frame_count;++i){
         compressed_x tmp;
@@ -37,9 +44,11 @@ void Period::decompress(const std::vector<int> &decompress_idxes, x_value &start
         for(int i = 0;i < c_frames_number;++i){
             input_fstream.read((char*)&c_idxes[i], sizeof(c_idxes[i])); // 记录每个被压缩的帧的编号
         }
-        std::vector<std::vector<compressed_diff>> compressed(c_frames_number);
+        std::vector<std::vector<compressed_diff>> compressed(signal_count);
+        for(int i = 0;i < signal_count;++i){
+            compressed[i].resize(c_frames_number);
+        }
         for(int i = 0;i < c_frames_number;++i){
-            compressed[i].resize(signal_count);
             for(int j = 0;j < signal_count;++j){
                 compressed_diff_write tmp;
                 input_fstream.read((char*)&tmp, sizeof(tmp)); // 压缩后的差值
@@ -54,6 +63,9 @@ void Period::decompress(const std::vector<int> &decompress_idxes, x_value &start
         outputter.OutputXValue(frames[0].x);
         for(int idx:decompress_idxes){
             outputter.OutputSignalValue(base[idx]);
+        }
+        if(period_count == 0){
+            std::cout << "[DEBUG] Period: " << period_count << " time: " << base_time << " data[0]: " << base[0] << " slope[0]: " << slope[0] << std::endl;
         }
         outputter.FinishOnePointData();
         int c_idx_i = 0; // 用以记录现在c_idx到哪了
@@ -64,15 +76,21 @@ void Period::decompress(const std::vector<int> &decompress_idxes, x_value &start
             for(int j = 0;j < decompress_number;++j){
                 predict_values[j] = slope[decompress_idxes[j]] * (frames[i].x - base_time) + base[decompress_idxes[j]];
             }
-            if(i == c_idxes[c_idx_i]){
+            if(c_frames_number > 0 && i == c_idxes[c_idx_i]){
                 c_idx_i++;
                 for(int j = 0;j < decompress_number;++j){
-                    outputter.OutputSignalValue(predict_values[j] + decompressed[i][j]);
+                    outputter.OutputSignalValue(predict_values[j] + decompressed[j][i]);
+                }
+                if(period_count == 0){
+                    std::cout << "[DEBUG] Period: " << period_count << " time: " << frames[i].x << " data[0]: " << predict_values[0] + decompressed[0][i] << std::endl;
                 }
             }
             else{
                 for(int j = 0;j < decompress_number;++j){
                     outputter.OutputSignalValue(predict_values[j]);
+                }
+                if(period_count == 0){
+                    std::cout << "[DEBUG] Period: " << period_count << " time: " << frames[i].x << " data[0]: " << predict_values[0] << std::endl;
                 }
             }
             outputter.FinishOnePointData();
@@ -80,9 +98,11 @@ void Period::decompress(const std::vector<int> &decompress_idxes, x_value &start
     }
     else{
         // Reserved for Boris Johnson;
-        std::vector<std::vector<compressed_diff>> compressed(frame_count);
+        std::vector<std::vector<compressed_diff>> compressed(signal_count);
+        for(int i = 0;i < signal_count;++i){
+            compressed[i].resize(frame_count);
+        }
         for(int i = 0;i < frame_count;++i){
-            compressed[i].resize(signal_count);
             for(int j = 0;j < signal_count;++j){
                 compressed_diff_write tmp;
                 input_fstream.read((char*)&tmp, sizeof(tmp)); // 压缩后的差值
@@ -98,8 +118,10 @@ void Period::decompress(const std::vector<int> &decompress_idxes, x_value &start
         for(int idx:decompress_idxes){
             outputter.OutputSignalValue(base[idx]);
         }
+        if(period_count == 0){
+            std::cout << "[DEBUG] Period: " << period_count << " time: " << base_time << " data[0]: " << base[0] << std::endl;
+        }
         outputter.FinishOnePointData();
-        int c_idx_i = 0; // 用以记录现在c_idx到哪了
         int decompress_number = decompress_idxes.size();
         for(int i = 1;i < frame_count;++i){
             outputter.OutputXValue(frames[i].x);
@@ -110,9 +132,14 @@ void Period::decompress(const std::vector<int> &decompress_idxes, x_value &start
             for(int j = 0;j < decompress_number;++j){
                 outputter.OutputSignalValue(predict_values[j]);
             }
+            if(period_count == 0){
+                std::cout << "[DEBUG] Period: " << period_count << " time: " << frames[i].x << " data[0]: " << predict_values[0] << std::endl;
+            }
             outputter.FinishOnePointData();
         }
     }
+    std::cout << "[Decompress] Period No." << period_count << " frame number: " << (int)frame_count << std::endl;
+    ++period_count;
     if(start == -1){
         start = base_time;
     }

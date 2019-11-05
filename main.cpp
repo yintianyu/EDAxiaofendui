@@ -8,19 +8,30 @@
 #include <iostream>
 #include <string>
 #include "compressor.hpp"
+#include "decompressor.hpp"
 #include "datatype.hpp"
 
 int main(int argc, char* argv[]){
-    if(argc < 3){
-        std::cerr << "Invalid arguments" << std::endl;
-        exit(-1);
+    std::string input_filename;
+    std::string output_filename;
+    if(argc < 3){ //only for debug
+        input_filename = "cases/test1.wv";
+        output_filename = "cases/test1.wv.edaxfd";
     }
-    std::string input_filename(argv[1]);
-    std::string output_filename(argv[2]);
+    else{
+        input_filename = argv[1];
+        output_filename = argv[2];
+    }
+
+    std::vector<std::string> signal_names;
     Compressor *compressor = new Compressor(input_filename, output_filename);
     compressor->compress();
+    compressor->get_signal_names(signal_names);
     delete compressor;
-    std::cout << sizeof(compressed_diff_write) << std::endl;
+    std::cout << "Compress Complete" << std::endl;
+    Decompressor *decompressor = new Decompressor(output_filename, input_filename+".deedaxfd");
+    decompressor->decompress(signal_names);
+    std::cout << "Decompress Complete" << std::endl;
     return 0;
 }
 

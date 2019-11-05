@@ -6,3 +6,7 @@
 edaxiaofendui
 *.edaxfd
 core.*
+*.ipch
+*.bin
+*.score
+*.deedaxfd
