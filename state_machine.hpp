@@ -42,10 +42,10 @@ class State_Machine{
     void perform_regulation(const std::vector<std::vector<original_data>> &to_be_compressed, const std::vector<original_data> &max_diff, const std::vector<original_data> &min_diff, 
         std::vector<std::vector<compressed_diff>> &compressed);
 
-    static compressed_x x_value_compress(x_value x); // 压缩x值
     void write_period_to_file(const std::vector<std::vector<compressed_diff>> &compressed, const std::vector<original_data> &diff_max, bool predict);
     public:
     State_Machine(std::ofstream &output_fstream, int signal_count);
+    static compressed_x x_value_compress(x_value x); // 压缩x值
     void act(const std::vector<original_data> &data, x_value time, int index);
     int period_count;
     ~State_Machine();

@@ -157,11 +157,15 @@ compressed_x State_Machine::x_value_compress(x_value x){
     compressed_x compressed;
     assert(x < 4096);
     int count = 0;
-    while(x < 2048){
-        x *= 2;
+    // std::cout << "[x_value_compress] x=" << x << std::endl;
+    while(x < 4096 / X_VALUE_STEP){
+        x *= X_VALUE_STEP;
+        // std::cout << "[x_value_compress] x=" << x << std::endl;
         count += 1;
     }
+    // std::cout << "[x_value_compress] count=" << count << std::endl;
     int val = (int)x;
+    assert(count < 16);
     compressed = val << 4 | count;
     return compressed;
 }

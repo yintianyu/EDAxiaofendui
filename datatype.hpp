@@ -33,4 +33,6 @@ typedef std::bitset<8>  compressed_diff_8bit;
 
 typedef uint8_t compressed_diff_write; // 写入文件的类型，如果使用std::bitset<16> 则改为uint16_t
 
+#define X_VALUE_STEP (16) // x value压缩时每次的放大倍数
+
 #endif

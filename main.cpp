@@ -10,28 +10,16 @@
 #include "compressor.hpp"
 #include "decompressor.hpp"
 #include "datatype.hpp"
+#include "period.hpp"
+#include "state_machine.hpp"
+#include <cstdio>
 
 int main(int argc, char* argv[]){
-    std::string input_filename;
-    std::string output_filename;
-    if(argc < 3){ //only for debug
-        input_filename = "cases/test1.wv";
-        output_filename = "cases/test1.wv.edaxfd";
-    }
-    else{
-        input_filename = argv[1];
-        output_filename = argv[2];
-    }
-
-    std::vector<std::string> signal_names;
-    Compressor *compressor = new Compressor(input_filename, output_filename);
-    compressor->compress();
-    compressor->get_signal_names(signal_names);
-    delete compressor;
-    std::cout << "Compress Complete" << std::endl;
-    Decompressor *decompressor = new Decompressor(output_filename, input_filename+".deedaxfd");
-    decompressor->decompress(signal_names);
-    std::cout << "Decompress Complete" << std::endl;
+    x_value ori_diff = 1.25e-12;
+    compressed_x compressed = State_Machine::x_value_compress(ori_diff);
+    printf("compressed:0x%x\n", compressed);
+    x_value decomp_diff = Period::x_value_decompress(compressed);
+    printf("decompressed:%f\n", decomp_diff);
     return 0;
 }
 
