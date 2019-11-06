@@ -14,6 +14,8 @@
 #include "outputter/WaveformOutputterForCompetition.h"
 #include "datatype.hpp"
 #include "A_Regulation.hpp"
+#include "u_Regulation.hpp"
+#include "Homo_Regulation.hpp"
 
 struct X_CompressVals_Pair{
     X_CompressVals_Pair(x_value x, const std::vector<compressed_diff> &values):x(x), values(values){}
@@ -48,18 +50,26 @@ class Period{
 
     void read_head();
     WaveformOutputterForCompetition &outputter;
-    Regulation *regulator;
+    Regulation *regulator_A;
+    Regulation *regulator_u;
+    Regulation *regulator_homo;
+
+    std::vector<REGULATION_TYPE> regulation_types;
 
     
     public:
-    Period(std::ifstream &input_fstream, int signal_count, WaveformOutputterForCompetition &outputter):input_fstream(input_fstream), signal_count(signal_count), outputter(outputter){
-        regulator = new A_Regulation();
+    Period(std::ifstream &input_fstream, int signal_count, WaveformOutputterForCompetition &outputter):input_fstream(input_fstream), signal_count(signal_count), outputter(outputter), regulation_types(signal_count){
+        regulator_A = new A_Regulation();
+        regulator_u = new u_Regulation();
+        regulator_homo = new Homo_Regulation();
         period_count = 0;
     }
     static x_value x_value_decompress(compressed_x compressed);
     void decompress(const std::vector<int> &decompress_idxes, x_value &start, x_value &end);
     ~Period(){
-        delete regulator;
+        delete regulator_A;
+        delete regulator_u;
+        delete regulator_homo;
     }
     int period_count;
 };

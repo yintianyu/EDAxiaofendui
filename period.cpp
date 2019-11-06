@@ -20,6 +20,9 @@ void Period::read_head(){
     input_fstream.read((char*)&base_time, sizeof(base_time)); // 开始时间
     frames[0].x = base_time;
     input_fstream.read((char*)&end_time, sizeof(end_time)); // 结束时间
+    for(int i = 0;i < signal_count;++i){
+        input_fstream.read((char*)&regulation_types[i], sizeof(regulation_types[i])); // 规约方案
+    }
     diff_max.resize(signal_count);
     base.resize(signal_count);
     slope.resize(signal_count);
@@ -63,13 +66,26 @@ void Period::decompress(const std::vector<int> &decompress_idxes, x_value &start
         std::vector<std::vector<original_data>> decompressed(decompress_idxes.size());
         int decompressed_i = 0;
         for(auto decompress_idx:decompress_idxes){
-            regulator->decompress(compressed[decompress_idx], diff_max[decompress_idx], decompressed[decompressed_i++]);
+            switch(regulation_types[decompress_idx]){
+                case REGU_A:
+                    regulator_A->decompress(compressed[decompress_idx], diff_max[decompress_idx], decompressed[decompressed_i++]);
+                    break;
+                case REGU_U:
+                    regulator_u->decompress(compressed[decompress_idx], diff_max[decompress_idx], decompressed[decompressed_i++]);
+                    break;
+                case REGU_HOMO:
+                    regulator_homo->decompress(compressed[decompress_idx], diff_max[decompress_idx], decompressed[decompressed_i++]);
+                    break; 
+                default:
+                    std::cerr << "egulation_type error, die" << std::endl;
+                    exit(1);                   
+            }
         }
         outputter.OutputXValue(frames[0].x);
         for(int idx:decompress_idxes){
             outputter.OutputSignalValue(base[idx]);
         }
-        if(period_count == 0){
+        if(period_count == 0 || true){
             std::cout << "[DEBUG] Period: " << period_count << " time: " << base_time << " data[0]: " << base[0] << " slope[0]: " << slope[0] << std::endl;
         }
         outputter.FinishOnePointData();
@@ -84,9 +100,9 @@ void Period::decompress(const std::vector<int> &decompress_idxes, x_value &start
             if(c_frames_number > 0 && i == c_idxes[c_idx_i]){
                 c_idx_i++;
                 for(int j = 0;j < decompress_number;++j){
-                    outputter.OutputSignalValue(predict_values[j] + decompressed[j][i]);
+                    outputter.OutputSignalValue(predict_values[j] + decompressed[j][c_idx_i]);
                 }
-                if(period_count == 0){
+                if(period_count == 0 || true){
                     std::cout << "[DEBUG] Period: " << period_count << " time: " << frames[i].x << " data[0]: " << predict_values[0] + decompressed[0][i] << std::endl;
                 }
             }
@@ -94,7 +110,7 @@ void Period::decompress(const std::vector<int> &decompress_idxes, x_value &start
                 for(int j = 0;j < decompress_number;++j){
                     outputter.OutputSignalValue(predict_values[j]);
                 }
-                if(period_count == 0){
+                if(period_count == 0 || true){
                     std::cout << "[DEBUG] Period: " << period_count << " time: " << frames[i].x << " data[0]: " << predict_values[0] << std::endl;
                 }
             }
@@ -117,14 +133,33 @@ void Period::decompress(const std::vector<int> &decompress_idxes, x_value &start
         std::vector<std::vector<original_data>> decompressed(decompress_idxes.size());
         int decompressed_i = 0;
         for(auto decompress_idx:decompress_idxes){
-            regulator->decompress(compressed[decompress_idx], diff_max[decompress_idx], decompressed[decompressed_i++]);
+            switch(regulation_types[decompress_idx]){
+                case REGU_A:
+                    regulator_A->decompress(compressed[decompress_idx], diff_max[decompress_idx], decompressed[decompressed_i++]);
+                    break;
+                case REGU_U:
+                    regulator_u->decompress(compressed[decompress_idx], diff_max[decompress_idx], decompressed[decompressed_i++]);
+                    break;
+                case REGU_HOMO:
+                    regulator_homo->decompress(compressed[decompress_idx], diff_max[decompress_idx], decompressed[decompressed_i++]);
+                    break; 
+                default:
+                    std::cerr << "egulation_type error, die" << std::endl;
+                    exit(1);                   
+            }
+        }
+        if(period_count == 1){
+            std::cout << "Check Regulation on Period 1, type:" << regulation_types[0] << std::endl;
+            for(int i = 0;i < frames.size();++i){
+                std::cout << "decompressed[0][" << i << "]=" << decompressed[0][i] << std::endl;
+            }
         }
         outputter.OutputXValue(frames[0].x);
         for(int idx:decompress_idxes){
             outputter.OutputSignalValue(base[idx]);
         }
-        if(period_count == 0){
-            std::cout << "[DEBUG] Period: " << period_count << " time: " << base_time << " data[0]: " << base[0] << std::endl;
+        if(period_count == 0 || true){
+            std::cout << "[DEBUG] Period: " << period_count << " time: " << base_time << " data[0]: " << base[0] << " slope[0]: " << slope[0] << std::endl;
         }
         outputter.FinishOnePointData();
         int decompress_number = decompress_idxes.size();
@@ -132,12 +167,12 @@ void Period::decompress(const std::vector<int> &decompress_idxes, x_value &start
             outputter.OutputXValue(frames[i].x);
             std::vector<original_data> predict_values(decompress_number);
             for(int j = 0;j < decompress_number;++j){
-                predict_values[j] = slope[decompress_idxes[j]] * (frames[i].x - base_time) + base[decompress_idxes[j]];
+                predict_values[j] = slope[decompress_idxes[j]] * (frames[i].x - base_time) + base[decompress_idxes[j]] + decompressed[j][i];
             }
             for(int j = 0;j < decompress_number;++j){
                 outputter.OutputSignalValue(predict_values[j]);
             }
-            if(period_count == 0){
+            if(period_count == 0 || true){
                 std::cout << "[DEBUG] Period: " << period_count << " time: " << frames[i].x << " data[0]: " << predict_values[0] << std::endl;
             }
             outputter.FinishOnePointData();

@@ -6,21 +6,28 @@
  */
 
 #include "state_machine.hpp"
-#include "A_Regulation.hpp"
-#include "Homo_Regulation.hpp"
 #include <iostream>
 
 #define abs(x) ((x) > 0 ? (x) : -(x))
 
 State_Machine::State_Machine(std::ofstream &output_fstream, int signal_count): signal_count(signal_count), 
-base(signal_count), slope(signal_count), output_fstream(output_fstream){
+base(signal_count), slope(signal_count), output_fstream(output_fstream), small_signal_counts(signal_count, 0), 
+regulation_types(signal_count), period_count(0){
     // std::cout << "State_Machine Constructor: " << signal_count << std::endl;
+    state = IDLE;
     c_count = 0;
-    period_count = 0;
+    reference_sum = 0;
+    regulator_A = new A_Regulation();
+    regulator_u = new u_Regulation();
+    regulator_homo = new Homo_Regulation();
+    // period_count = 0;
 }
 
-void State_Machine::act(const std::vector<original_data> &data, x_value time, int index){
-    if(period_count == 0){
+void State_Machine::act(const std::vector<original_data> &data, x_value time, int index, bool debug){
+    if(data.size() == 0){
+        return;
+    }
+    if(period_count == 0 || debug){
         std::cout << "[DEBUG] Period: " << period_count << " time: " << time << " data[0]: " << data[0];// << std::endl;
     }
     if(state == IDLE){
@@ -33,20 +40,44 @@ void State_Machine::act(const std::vector<original_data> &data, x_value time, in
         frames.push_back(X_Vals_Pair(time, data));
         c_idxes.clear();
         c_count = 0;
+        reference_sum = 0;
+        for(int i = 0;i < signal_count;++i){
+            reference_sum += abs(base[i]);
+            small_signal_counts[i] = data[i] < 1 ? 1 : 0;  // 顺便将其初始化
+        }
+        if(reference_sum == 0){
+            reference_sum = 1e-16; // epsilon, get rid of dividing 0
+        }
         std::cout << std::endl;
         return;
     }
     if(state == INIT){
         for(int i = 0;i < signal_count;++i){
             slope[i] = (data[i] - base[i]) / (time - base_time);
+            small_signal_counts[i] += data[i] < 1 ? 1 : 0;
         }
         state = RUN;
         frames.push_back(X_Vals_Pair(time, data));
+        predict_step = time - base_time;
         std::cout << " slope[0]: " << slope[0] << std::endl;
         return;
     }
     if(state == RUN){
-        std::cout << std::endl;
+        std::cout << std::endl;       
+        // 检查范数是否满足beta, 时间跨度是不是和predict_step相比差的太多了
+        original_data diff_sum = 0;
+        x_value diff_time = time - base_time;
+        for(int i = 0;i < signal_count;++i){
+            diff_sum += abs(data[i] - base[i]);
+            small_signal_counts[i] += data[i] < 1 ? 1 : 0;
+        }
+        if(diff_sum / reference_sum > BETA/* || diff_time / predict_step > X_STEP_BETA*/){
+            end_time = time;
+            save_period();
+            reset();
+            act(data, time, index, false);
+            return;
+        }
         frames.push_back(X_Vals_Pair(time, data));
         bool isPredict = true;
         for(int i = 0;i < signal_count;++i){
@@ -61,15 +92,9 @@ void State_Machine::act(const std::vector<original_data> &data, x_value time, in
             c_frames.push_back(X_Vals_Pair(time, data));
             c_idxes.push_back(frames.size() - 1);
         }
-        // 检查范数是否满足beta，帧的长度是否满足ALPHA
-        original_data diff_sum = 0;
-        original_data reference_sum = 0;
-        for(int i = 0;i < signal_count;++i){
-            diff_sum += abs(data[i] - base[i]);
-            reference_sum += abs(base[i]);
-        }
+        // 帧的长度是否满足ALPHA
         // std::cout << "diff_sum / reference_sum = " << diff_sum / reference_sum << std::endl;
-        if(diff_sum / reference_sum > BETA || frames.size() >= ALPHA){
+        if(frames.size() >= ALPHA){
             end_time = time;
             save_period();
             reset();
@@ -97,6 +122,9 @@ void State_Machine::save_period(){
         for(const auto &frame : frames){
             for(int i = 0;i < signal_count;++i){
                 original_data diff = frame.values[i] - (base[i] + slope[i] * (frame.x - base_time));
+                if(period_count == 1 && i == 0){
+                    std::cout << frame.values[i] << " - (" << base[i] << " + " << slope[i] << " * (" << frame.x << " - " << base_time << " )) = " << diff << std::endl; 
+                }
                 if(diff > diff_max[i]){
                     diff_max[i] = diff;
                 }
@@ -130,6 +158,12 @@ void State_Machine::save_period(){
         }
     }
     perform_regulation(to_be_compressed, diff_max, diff_min, compressed);
+    if(period_count == 1){
+        std::cout << "Check Regulation on Period 1" << std::endl;
+        for(int i = 0;i < frames.size();++i){
+            std::cout << "to_be_compressed[0][" << i << "]=" << to_be_compressed[0][i] << std::endl;
+        }
+    }
     write_period_to_file(compressed, diff_max, predict);
     std::cout << "[Compressor] Period No." << period_count << " frame number: " << frames.size() << std::endl;
     period_count += 1;
@@ -140,14 +174,18 @@ void State_Machine::perform_regulation(const std::vector<std::vector<original_da
     // std::cout << "In State_Machine::perform_regulation: " << to_be_compressed.size() << " " << to_be_compressed[0].size() << std::endl;
     for(int i = 0;i < signal_count;i++){
         if(max_diff[i] - min_diff[i] >= THRESHOLD_HOMO_INHOMO){ // 非均匀量化
-            Regulation *regulator = new A_Regulation(); // TODO: 先统一用A律，怎么把u律用上再改
-            regulator->compress(to_be_compressed[i], max_diff[i], compressed[i]);
-            delete regulator;
+            if(small_signal_counts[i] * 2 < frames.size()){ // 大信号比较多用A律
+                regulator_A->compress(to_be_compressed[i], max_diff[i], compressed[i]);
+                regulation_types[i] = REGU_A;
+            }
+            else{
+                regulator_u->compress(to_be_compressed[i], max_diff[i], compressed[i]);
+                regulation_types[i] = REGU_U;
+            }
         }
         else{ // 均匀量化
-            Regulation *regulator = new Homo_Regulation();
-            regulator->compress(to_be_compressed[i], max_diff[i], compressed[i]);
-            delete regulator;
+            regulator_homo->compress(to_be_compressed[i], max_diff[i], compressed[i]);
+            regulation_types[i] = REGU_HOMO;
         }
     }
     // std::cout << compressed.size() << " " << compressed[0].size() << std::endl;
@@ -180,6 +218,9 @@ void State_Machine::write_period_to_file(const std::vector<std::vector<compresse
     output_fstream.write((char*)&base_time, sizeof(base_time)); // 开始时间（未压缩）
     output_fstream.write((char*)&end_time, sizeof(end_time)); // 结束时间（未压缩）
     std::cout << "[Period Metadata] " << (int)frame_count << " " << predict << " " << base_time << " " << end_time << std::endl;
+    for(int i = 0;i < signal_count;++i){
+        output_fstream.write((char*)&regulation_types[i], sizeof(regulation_types[i])); // 规约方案
+    }
     for(int i = 0;i < signal_count;++i){
         output_fstream.write((char*)&diff_max[i], sizeof(diff_max[i])); // 每个信号的误差最大值
     }
@@ -232,4 +273,7 @@ void State_Machine::reset(){
 State_Machine::~State_Machine(){
     if(state == RUN)
         save_period();
+    delete regulator_u;
+    delete regulator_homo;
+    delete regulator_A;
 }
