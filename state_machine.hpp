@@ -57,7 +57,7 @@ class State_Machine{
     int debug_total_head_size_byte; // 用于计量所有的时间片中时间片头的大小
     public:
     State_Machine(std::ofstream &output_fstream, int signal_count);
-    static compressed_x x_value_compress(x_value x); // 压缩x值
+    inline static compressed_x x_value_compress(x_value x); // 压缩x值
     void act(const std::vector<original_data> &data, x_value time, int index, bool debug=true);
     int period_count;
     ~State_Machine();

@@ -207,20 +207,21 @@ void State_Machine::perform_regulation(const std::vector<std::vector<original_da
 }
 
 compressed_x State_Machine::x_value_compress(x_value x){
-    compressed_x compressed;
-    assert(x < X_VALUE_MAX);
-    int count = 0;
-    // std::cout << "[x_value_compress] x=" << x << std::endl;
-    while(x < X_VALUE_MAX / X_VALUE_STEP){
-        x *= X_VALUE_STEP;
-        // std::cout << "[x_value_compress] x=" << x << std::endl;
-        count += 1;
-    }
-    // std::cout << "[x_value_compress] count=" << count << std::endl;
-    int val = (int)x;
-    assert(count < (1 << X_VALUE_DEVIDE));
-    compressed = val << X_VALUE_DEVIDE | count;
-    return compressed;
+    // compressed_x compressed;
+    // assert(x < X_VALUE_MAX);
+    // int count = 0;
+    // // std::cout << "[x_value_compress] x=" << x << std::endl;
+    // while(x < X_VALUE_MAX / X_VALUE_STEP){
+    //     x *= X_VALUE_STEP;
+    //     // std::cout << "[x_value_compress] x=" << x << std::endl;
+    //     count += 1;
+    // }
+    // // std::cout << "[x_value_compress] count=" << count << std::endl;
+    // int val = (int)x;
+    // assert(count < (1 << X_VALUE_DEVIDE));
+    // compressed = val << X_VALUE_DEVIDE | count;
+    // return compressed;
+    return x;
 }
 
 void State_Machine::write_period_to_file(const std::vector<std::vector<compressed_diff>> &compressed, const std::vector<original_data> &diff_max, bool predict){
