@@ -7,8 +7,9 @@
 
 #include "state_machine.hpp"
 #include <iostream>
+#include <cmath>
 
-#define abs(x) ((x) > 0 ? (x) : -(x))
+// #define abs(x) ((x) > 0 ? (x) : -(x))
 
 State_Machine::State_Machine(std::ofstream &output_fstream, int signal_count): signal_count(signal_count), 
 base(signal_count), slope(signal_count), output_fstream(output_fstream), small_signal_counts(signal_count, 0), 
@@ -42,7 +43,7 @@ void State_Machine::act(const std::vector<original_data> &data, x_value time, in
         c_count = 0;
         reference_sum = 0;
         for(int i = 0;i < signal_count;++i){
-            reference_sum += abs(base[i]);
+            reference_sum += fabs(base[i]);
             small_signal_counts[i] = data[i] < 1 ? 1 : 0;  // 顺便将其初始化
         }
         if(reference_sum == 0){
@@ -66,17 +67,16 @@ void State_Machine::act(const std::vector<original_data> &data, x_value time, in
         std::cout << std::endl;       
         // 检查范数是否满足beta, 斜率和一开始的是不是差的太多
         original_data diff_sum = 0;
-        x_value diff_time = time - base_time;
         std::vector<original_data> slope_local(signal_count);
         bool slope_ok = true; // 用于检查当前slope和base的slope差距是不是过大
         for(int i = 0;i < signal_count;++i){
-            diff_sum += abs(data[i] - base[i]);
+            diff_sum += fabs(data[i] - base[i]);
             small_signal_counts[i] += data[i] < 1 ? 1 : 0;
             int last_idx = frames.size()-1;
             slope_local[i] = (data[i] - frames[last_idx].values[i]) / (time - frames[last_idx].x);
-            if(abs((slope_local[i] - slope[i]) / (slope[i] + 1e-20)) > 2){
+            if(fabs((slope_local[i] - slope[i]) / (slope[i] + 1e-25)) > SLOPE_ERROR_BETA){
                 slope_ok = false;
-                std::cout << period_count << " slope_ok=false, abort. "<< slope_local[i] << " " << slope[i] << " " << abs((slope_local[i] - slope[i]) / (slope[i] + 1e-20)) << std::endl;
+                std::cout << period_count << " slope_ok=false, abort. "<< slope_local[i] << " " << slope[i] << " " << fabs((slope_local[i] - slope[i]) / (slope[i] + 1e-20)) << std::endl;
                 break;
             }
         }
@@ -94,7 +94,7 @@ void State_Machine::act(const std::vector<original_data> &data, x_value time, in
         bool isPredict = true;
         for(int i = 0;i < signal_count;++i){
             original_data predict = base[i] + slope[i] * (time - base_time);
-            if(abs(predict - data[i]) > EPSILON){
+            if(fabs(predict - data[i]) > EPSILON){
                 isPredict = false;
                 break;
             }
@@ -128,8 +128,8 @@ void State_Machine::save_period(){
         for(int i = 0;i < signal_count;++i){
             compressed[i].reserve(frames.size());
             to_be_compressed[i].reserve(frames.size());
-            diff_max[i] = -10000;
-            diff_min[i] = 10000;
+            diff_max[i] = 0;
+            diff_min[i] = 10000000;
         }
         predict = false;
         for(const auto &frame : frames){
@@ -138,11 +138,11 @@ void State_Machine::save_period(){
                 if(period_count == DEBUG_PERIOD && i == 0){
                     std::cout << frame.values[i] << " - (" << base[i] << " + " << slope[i] << " * (" << frame.x << " - " << base_time << " )) = " << diff << std::endl; 
                 }
-                if(diff > diff_max[i]){
-                    diff_max[i] = diff;
+                if(fabs(diff) > diff_max[i]){
+                    diff_max[i] = fabs(diff);
                 }
-                if(diff < diff_min[i]){
-                    diff_min[i] = diff;
+                if(fabs(diff) < diff_min[i]){
+                    diff_min[i] = fabs(diff);
                 }
                 to_be_compressed[i].push_back(diff);
             }
@@ -153,18 +153,18 @@ void State_Machine::save_period(){
         for(int i = 0;i < signal_count;++i){
             compressed[i].reserve(c_frames.size());
             to_be_compressed[i].reserve(c_frames.size());
-            diff_max[i] = -10000;
-            diff_min[i] = 10000;
+            diff_max[i] = 0;
+            diff_min[i] = 10000000;
         }
         predict = true;
         for(const auto &frame : c_frames){
             for(int i = 0;i < signal_count;++i){
                 original_data diff = frame.values[i] - (base[i] + slope[i] * (frame.x - base_time));
-                if(diff > diff_max[i]){
-                    diff_max[i] = diff;
+                if(fabs(diff) > diff_max[i]){
+                    diff_max[i] = fabs(diff);
                 }
-                if(diff < diff_min[i]){
-                    diff_min[i] = diff;
+                if(fabs(diff) < diff_min[i]){
+                    diff_min[i] = fabs(diff);
                 }
                 to_be_compressed[i].push_back(diff);
             }
@@ -173,9 +173,10 @@ void State_Machine::save_period(){
     perform_regulation(to_be_compressed, diff_max, diff_min, compressed);
     if(period_count == DEBUG_PERIOD && frames.size()) {
         std::cout << "Check Regulation on Period 1" << std::endl;
-        for(int i = 0;i < to_be_compressed[0].size();++i){
+        for(int i = 0;i < (int)to_be_compressed[0].size();++i){
             std::cout << "to_be_compressed[0][" << i << "]=" << to_be_compressed[0][i] << std::endl;
         }
+        std::cout << "diff_max[0] = " << diff_max[0] << " diff_min[0] = " << diff_min[0] << std::endl;
     }
     write_period_to_file(compressed, diff_max, predict);
     std::cout << "[Compressor] Period No." << period_count << " frame number: " << frames.size() << std::endl;
@@ -187,7 +188,7 @@ void State_Machine::perform_regulation(const std::vector<std::vector<original_da
     // std::cout << "In State_Machine::perform_regulation: " << to_be_compressed.size() << " " << to_be_compressed[0].size() << std::endl;
     for(int i = 0;i < signal_count;i++){
         if(max_diff[i] - min_diff[i] >= THRESHOLD_HOMO_INHOMO){ // 非均匀量化
-            if(small_signal_counts[i] * 2 < frames.size()){ // 大信号比较多用A律
+            if(small_signal_counts[i] * 2 < (int)frames.size()){ // 大信号比较多用A律
                 regulator_A->compress(to_be_compressed[i], max_diff[i], compressed[i]);
                 regulation_types[i] = REGU_A;
             }

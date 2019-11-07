@@ -150,7 +150,7 @@ void Period::decompress(const std::vector<int> &decompress_idxes, x_value &start
         }
         if(period_count == DEBUG_PERIOD){
             std::cout << "Check Regulation on Period " << DEBUG_PERIOD << ", type:" << regulation_types[0] << std::endl;
-            for(int i = 0;i < frames.size();++i){
+            for(int i = 0;i < (int)frames.size();++i){
                 std::cout << "decompressed[0][" << i << "]=" << decompressed[0][i] << std::endl;
             }
         }
