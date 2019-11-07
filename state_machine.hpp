@@ -54,6 +54,7 @@ class State_Machine{
     void write_period_to_file(const std::vector<std::vector<compressed_diff>> &compressed, const std::vector<original_data> &diff_max, bool predict);
 
     Regulation *regulator_A, *regulator_u, *regulator_homo;
+    int debug_total_head_size_byte; // 用于计量所有的时间片中时间片头的大小
     public:
     State_Machine(std::ofstream &output_fstream, int signal_count);
     static compressed_x x_value_compress(x_value x); // 压缩x值

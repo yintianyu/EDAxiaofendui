@@ -13,10 +13,12 @@
 #include "period.hpp"
 #include "state_machine.hpp"
 #include <cstdio>
+#include <iomanip>
 
 int main(int argc, char* argv[]){
     std::string input_filename;
     std::string output_filename;
+    std::cout<<std::setprecision(15);
     if(argc < 3){ //only for debug
         input_filename = "cases/test1.wv";
         output_filename = "cases/test1.wv.edaxfd";

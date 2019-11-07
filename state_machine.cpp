@@ -21,6 +21,7 @@ regulation_types(signal_count), period_count(0){
     regulator_A = new A_Regulation();
     regulator_u = new u_Regulation();
     regulator_homo = new Homo_Regulation();
+    debug_total_head_size_byte = 0;
     // period_count = 0;
 }
 
@@ -74,7 +75,7 @@ void State_Machine::act(const std::vector<original_data> &data, x_value time, in
             small_signal_counts[i] += data[i] < 1 ? 1 : 0;
             int last_idx = frames.size()-1;
             slope_local[i] = (data[i] - frames[last_idx].values[i]) / (time - frames[last_idx].x);
-            if(fabs((slope_local[i] - slope[i]) / (slope[i] + 1e-25)) > SLOPE_ERROR_BETA){
+            if((data[i] == 0 && frames[last_idx].values[i] != 0)||(slope_local[i] == 0 && slope[i] != 0) || (slope_local[i] != 0 && slope[i] == 0) || fabs((slope_local[i] - slope[i]) / (slope[i] + 1e-25)) > SLOPE_ERROR_BETA){
                 slope_ok = false;
                 std::cout << period_count << " slope_ok=false, abort. "<< slope_local[i] << " " << slope[i] << " " << fabs((slope_local[i] - slope[i]) / (slope[i] + 1e-20)) << std::endl;
                 break;
@@ -227,28 +228,36 @@ void State_Machine::write_period_to_file(const std::vector<std::vector<compresse
     assert(output_fstream);
     uint8_t frame_count = frames.size();
     output_fstream.write((char*)&frame_count, sizeof(frame_count)); // 帧数N
+    debug_total_head_size_byte += sizeof(frame_count);
     output_fstream.write((char*)&predict, sizeof(char)); // 是否预测
+    debug_total_head_size_byte += sizeof(char);    
     // output_fstream.write((char*)&signal_count, sizeof(uint16_t)); // 信号数量
     output_fstream.write((char*)&base_time, sizeof(base_time)); // 开始时间（未压缩）
-    output_fstream.write((char*)&end_time, sizeof(end_time)); // 结束时间（未压缩）
+    debug_total_head_size_byte += sizeof(base_time);
+    // output_fstream.write((char*)&end_time, sizeof(end_time)); // 结束时间（未压缩）
+    // debug_total_head_size_byte += sizeof(end_time);
     std::cout << "[Period Metadata] " << (int)frame_count << " " << predict << " " << base_time << " " << end_time << std::endl;
     for(int i = 0;i < signal_count;++i){
         output_fstream.write((char*)&regulation_types[i], sizeof(regulation_types[i])); // 规约方案
     }
+    debug_total_head_size_byte += sizeof(regulation_types[0]) * signal_count;
     for(int i = 0;i < signal_count;++i){
         output_fstream.write((char*)&diff_max[i], sizeof(diff_max[i])); // 每个信号的误差最大值
     }
+    debug_total_head_size_byte += sizeof(diff_max[0]) * signal_count;
     for(int i = 0;i < signal_count;++i){
         output_fstream.write((char*)&base[i], sizeof(base[i])); // 每个信号的base
     }
+    debug_total_head_size_byte += sizeof(base[0]) * signal_count;
     for(int i = 0;i < signal_count;++i){
         output_fstream.write((char*)&slope[i], sizeof(slope[i]));
     }
+    debug_total_head_size_byte += sizeof(slope[0]) * signal_count;
     for(int i = 1;i < frame_count;++i){
         compressed_x tmp = x_value_compress(frames[i].x - frames[i-1].x); // 压缩每个time的step
-        output_fstream.write((char*)&tmp, sizeof(tmp)); // 一共(frame_count - 1)个uint16
+        output_fstream.write((char*)&tmp, sizeof(tmp)); // 一共(frame_count - 1)个uint32
     }
-
+    debug_total_head_size_byte += sizeof(compressed_x) * (frame_count-1);
     if(predict){
         uint16_t c_frames_number = c_idxes.size();
         // std::cout << c_idxes.size() << " " << compressed.size() << " " << compressed[0].size() << std::endl;
@@ -286,6 +295,7 @@ void State_Machine::reset(){
 
 State_Machine::~State_Machine(){
     save_period();
+    std::cout << "State Machine total head size(byte): " << debug_total_head_size_byte << std::endl;
     delete regulator_u;
     delete regulator_homo;
     delete regulator_A;
