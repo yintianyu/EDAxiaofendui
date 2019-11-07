@@ -75,6 +75,16 @@ void State_Machine::act(const std::vector<original_data> &data, x_value time, in
             small_signal_counts[i] += data[i] < 1 ? 1 : 0;
             int last_idx = frames.size()-1;
             slope_local[i] = (data[i] - frames[last_idx].values[i]) / (time - frames[last_idx].x);
+            if(fabs(slope_local[i]) <= SLOPE_ZERO && abs(slope[i]) > SLOPE_ZERO){ // 需要回溯
+                std::vector<original_data> last_data = frames[last_idx].values;
+                x_value x = frames[last_idx].x;
+                frames.pop_back();
+                save_period();
+                reset();
+                act(last_data, x, index, false);
+                act(data, time, index, false);
+                return;
+            }
             if((data[i] == 0 && frames[last_idx].values[i] != 0)||(slope_local[i] == 0 && slope[i] != 0) || (slope_local[i] != 0 && slope[i] == 0) || fabs((slope_local[i] - slope[i]) / (slope[i] + 1e-25)) > SLOPE_ERROR_BETA){
                 slope_ok = false;
                 std::cout << period_count << " slope_ok=false, abort. "<< slope_local[i] << " " << slope[i] << " " << fabs((slope_local[i] - slope[i]) / (slope[i] + 1e-20)) << std::endl;
