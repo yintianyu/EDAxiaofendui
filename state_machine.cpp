@@ -239,7 +239,8 @@ void State_Machine::write_period_to_file(const std::vector<std::vector<compresse
     // debug_total_head_size_byte += sizeof(end_time);
     std::cout << "[Period Metadata] " << (int)frame_count << " " << predict << " " << base_time << " " << end_time << std::endl;
     for(int i = 0;i < signal_count;++i){
-        output_fstream.write((char*)&regulation_types[i], sizeof(regulation_types[i])); // 规约方案
+        regulation_type_write tmp = regulation_types[i];
+        output_fstream.write((char*)&tmp, sizeof(tmp)); // 规约方案
     }
     debug_total_head_size_byte += sizeof(regulation_types[0]) * signal_count;
     for(int i = 0;i < signal_count;++i){

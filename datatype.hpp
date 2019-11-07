@@ -28,6 +28,7 @@ typedef float original_data_write;
 #define IDENTIFER (0x1234)
 
 typedef enum {REGU_A, REGU_U, REGU_HOMO} REGULATION_TYPE; //这个Period采用的规约手段，A律，u律还是均匀量化
+typedef unsigned char regulation_type_write;
 
 //typedef char compressed_diff; // Can be modify to short if 16 bits are needed
 

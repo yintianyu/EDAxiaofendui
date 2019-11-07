@@ -22,7 +22,9 @@ void Period::read_head(){
     frames[0].x = base_time;
     // input_fstream.read((char*)&end_time, sizeof(end_time)); // 结束时间
     for(int i = 0;i < signal_count;++i){
-        input_fstream.read((char*)&regulation_types[i], sizeof(regulation_types[i])); // 规约方案
+        regulation_type_write tmp;
+        input_fstream.read((char*)&tmp, sizeof(tmp)); // 规约方案
+        regulation_types[i] = (REGULATION_TYPE)tmp;
     }
     diff_max.resize(signal_count);
     base.resize(signal_count);
