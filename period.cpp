@@ -27,13 +27,19 @@ void Period::read_head(){
     base.resize(signal_count);
     slope.resize(signal_count);
     for(int i = 0;i < signal_count;++i){
-        input_fstream.read((char*)&diff_max[i], sizeof(diff_max[i])); // 每个信号的误差最大值
+        original_data_write tmp;
+        input_fstream.read((char*)&tmp, sizeof(tmp)); // 每个信号的误差最大值
+        diff_max[i] = tmp;
     }
     for(int i = 0;i < signal_count;++i){
-        input_fstream.read((char*)&base[i], sizeof(base[i])); // 每个信号的base
+        original_data_write tmp;
+        input_fstream.read((char*)&tmp, sizeof(tmp)); // 每个信号的base
+        base[i] = tmp;
     }
     for(int i = 0;i < signal_count;++i){
-        input_fstream.read((char*)&slope[i], sizeof(slope[i])); // 每个信号的base
+        original_data_write tmp;
+        input_fstream.read((char*)&tmp, sizeof(tmp)); // 每个信号的slope
+        slope[i] = tmp;
     }
     for(int i = 1;i < frame_count;++i){
         compressed_x tmp;

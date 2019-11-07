@@ -14,6 +14,7 @@ typedef double original_data;
 typedef double x_value;
 typedef unsigned char index_value;
 typedef unsigned int compressed_x;
+typedef float original_data_write;
 
 
 // Threshold define

@@ -242,15 +242,18 @@ void State_Machine::write_period_to_file(const std::vector<std::vector<compresse
     }
     debug_total_head_size_byte += sizeof(regulation_types[0]) * signal_count;
     for(int i = 0;i < signal_count;++i){
-        output_fstream.write((char*)&diff_max[i], sizeof(diff_max[i])); // 每个信号的误差最大值
+        original_data_write tmp = diff_max[i];
+        output_fstream.write((char*)&tmp, sizeof(tmp)); // 每个信号的误差最大值
     }
     debug_total_head_size_byte += sizeof(diff_max[0]) * signal_count;
     for(int i = 0;i < signal_count;++i){
-        output_fstream.write((char*)&base[i], sizeof(base[i])); // 每个信号的base
+        original_data_write tmp = base[i];
+        output_fstream.write((char*)&tmp, sizeof(tmp)); // 每个信号的base
     }
     debug_total_head_size_byte += sizeof(base[0]) * signal_count;
     for(int i = 0;i < signal_count;++i){
-        output_fstream.write((char*)&slope[i], sizeof(slope[i]));
+        original_data_write tmp = slope[i];
+        output_fstream.write((char*)&tmp, sizeof(tmp));
     }
     debug_total_head_size_byte += sizeof(slope[0]) * signal_count;
     for(int i = 1;i < frame_count;++i){
