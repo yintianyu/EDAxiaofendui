@@ -148,8 +148,8 @@ void Period::decompress(const std::vector<int> &decompress_idxes, x_value &start
                     exit(1);                   
             }
         }
-        if(period_count == 1){
-            std::cout << "Check Regulation on Period 1, type:" << regulation_types[0] << std::endl;
+        if(period_count == DEBUG_PERIOD){
+            std::cout << "Check Regulation on Period " << DEBUG_PERIOD << ", type:" << regulation_types[0] << std::endl;
             for(int i = 0;i < frames.size();++i){
                 std::cout << "decompressed[0][" << i << "]=" << decompressed[0][i] << std::endl;
             }

@@ -19,7 +19,7 @@ typedef unsigned int compressed_x;
 // Threshold define
 #define EPSILON (1e-9) // threshold between C and P
 #define YITA ((int)(frames.size() * 3 / 4))
-#define BETA (1)
+#define BETA (0.5)
 #define ALPHA (255)
 
 #define THRESHOLD_HOMO_INHOMO (1e-4) // 差值的最大值最小值之差的阈值，决定采用均匀量化还是非均匀量化
@@ -43,4 +43,5 @@ typedef uint16_t compressed_diff_write; // 写入文件的类型，如果使用s
 
 #define X_STEP_BETA (1e2) // 如果和base的时间跨度比predict_step的BETA倍还多，就切下一个。
 
+#define DEBUG_PERIOD (36) // 用于debug的打印周期
 #endif

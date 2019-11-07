@@ -64,14 +64,26 @@ void State_Machine::act(const std::vector<original_data> &data, x_value time, in
     }
     if(state == RUN){
         std::cout << std::endl;       
-        // 检查范数是否满足beta, 时间跨度是不是和predict_step相比差的太多了
+        // 检查范数是否满足beta, 斜率和一开始的是不是差的太多
         original_data diff_sum = 0;
         x_value diff_time = time - base_time;
+        std::vector<original_data> slope_local(signal_count);
+        bool slope_ok = true; // 用于检查当前slope和base的slope差距是不是过大
         for(int i = 0;i < signal_count;++i){
             diff_sum += abs(data[i] - base[i]);
             small_signal_counts[i] += data[i] < 1 ? 1 : 0;
+            int last_idx = frames.size()-1;
+            slope_local[i] = (data[i] - frames[last_idx].values[i]) / (time - frames[last_idx].x);
+            if(abs((slope_local[i] - slope[i]) / (slope[i] + 1e-20)) > 2){
+                slope_ok = false;
+                std::cout << period_count << " slope_ok=false, abort. "<< slope_local[i] << " " << slope[i] << " " << abs((slope_local[i] - slope[i]) / (slope[i] + 1e-20)) << std::endl;
+                break;
+            }
         }
-        if(diff_sum / reference_sum > BETA/* || diff_time / predict_step > X_STEP_BETA*/){
+        if(diff_sum / reference_sum > BETA || !slope_ok/* || diff_time / predict_step > X_STEP_BETA*/){
+            if(slope_ok){
+                std::cout << period_count << " BETA, abort. " << diff_sum << " " << reference_sum << std::endl;
+            }
             end_time = time;
             save_period();
             reset();
@@ -95,6 +107,7 @@ void State_Machine::act(const std::vector<original_data> &data, x_value time, in
         // 帧的长度是否满足ALPHA
         // std::cout << "diff_sum / reference_sum = " << diff_sum / reference_sum << std::endl;
         if(frames.size() >= ALPHA){
+            std::cout << period_count << " ALPHA, abort. " << std::endl;
             end_time = time;
             save_period();
             reset();
@@ -122,7 +135,7 @@ void State_Machine::save_period(){
         for(const auto &frame : frames){
             for(int i = 0;i < signal_count;++i){
                 original_data diff = frame.values[i] - (base[i] + slope[i] * (frame.x - base_time));
-                if(period_count == 1 && i == 0){
+                if(period_count == DEBUG_PERIOD && i == 0){
                     std::cout << frame.values[i] << " - (" << base[i] << " + " << slope[i] << " * (" << frame.x << " - " << base_time << " )) = " << diff << std::endl; 
                 }
                 if(diff > diff_max[i]){
@@ -158,9 +171,9 @@ void State_Machine::save_period(){
         }
     }
     perform_regulation(to_be_compressed, diff_max, diff_min, compressed);
-    if(period_count == 1){
+    if(period_count == DEBUG_PERIOD && frames.size()) {
         std::cout << "Check Regulation on Period 1" << std::endl;
-        for(int i = 0;i < frames.size();++i){
+        for(int i = 0;i < to_be_compressed[0].size();++i){
             std::cout << "to_be_compressed[0][" << i << "]=" << to_be_compressed[0][i] << std::endl;
         }
     }
@@ -271,8 +284,7 @@ void State_Machine::reset(){
 }
 
 State_Machine::~State_Machine(){
-    if(state == RUN)
-        save_period();
+    save_period();
     delete regulator_u;
     delete regulator_homo;
     delete regulator_A;
