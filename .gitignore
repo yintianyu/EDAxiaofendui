@@ -11,3 +11,4 @@ core.*
 *.score
 *.deedaxfd
 *.txt
+cases/*
