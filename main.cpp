@@ -31,12 +31,12 @@ int main(int argc, char* argv[]){
     std::vector<std::string> signal_names;
     Compressor *compressor = new Compressor(input_filename, output_filename);
     compressor->compress();
-    compressor->get_signal_names(signal_names);
-    delete compressor;
-    std::cout << "Compress Complete" << std::endl;
-    Decompressor *decompressor = new Decompressor(output_filename, input_filename+".deedaxfd");
-    decompressor->decompress(signal_names);
-    std::cout << "Decompress Complete" << std::endl;
+    // compressor->get_signal_names(signal_names);
+    // delete compressor;
+    // std::cout << "Compress Complete" << std::endl;
+    // Decompressor *decompressor = new Decompressor(output_filename, input_filename+".deedaxfd");
+    // decompressor->decompress(signal_names);
+    // std::cout << "Decompress Complete" << std::endl;
     return 0;
 }
 

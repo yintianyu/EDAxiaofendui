@@ -17,48 +17,51 @@
 #include "Homo_Regulation.hpp"
 
 struct X_Vals_Pair{
-    X_Vals_Pair(x_value x, const std::vector<original_data> &values):x(x), values(values){}
+    X_Vals_Pair(x_value x, original_data value):x(x), value(value){}
     x_value x;
-    const std::vector<original_data> values;
+    original_data value;
 };
 
 class State_Machine{
     private:
-    int signal_count;
+    int signal_idx; // 本状态机负责的信号编号
 
-    std::vector<original_data> base;
-    x_value base_time;
+    original_data base;
+    x_value_idx base_time;
     int base_idx;
-    std::vector<original_data> slope;
+    int base_count;
+    original_data slope;
     enum State{IDLE, INIT, RUN} state;
     std::vector<X_Vals_Pair> c_frames;
     std::vector<X_Vals_Pair> frames;
     std::ofstream &output_fstream;
 
     int c_count; // Frames need compressing
-    std::vector<int> small_signal_counts; // 有多少信号是小信号，用于u和A律的选择
+    int small_signal_count; // 有多少信号是小信号，用于u和A律的选择
     std::vector<uint8_t> c_idxes;
 
-    x_value end_time; // 最后一帧的时间
     x_value predict_step; // 第一帧和第二帧之间的时间跨度
 
     original_data reference_sum;
 
-    std::vector<REGULATION_TYPE> regulation_types; // 这个Period采用的规约手段，A律，u律还是均匀量化
+    REGULATION_TYPE regulation_type; // 这个Period采用的规约手段，A律，u律还是均匀量化
 
     void save_period();
     void reset();
-    void perform_regulation(const std::vector<std::vector<original_data>> &to_be_compressed, const std::vector<original_data> &max_diff, const std::vector<original_data> &min_diff, 
-        std::vector<std::vector<compressed_diff>> &compressed);
+    void perform_regulation(std::vector<original_data> &to_be_compressed, original_data max_diff, original_data min_diff, 
+        std::vector<compressed_diff> compressed);
 
-    void write_period_to_file(const std::vector<std::vector<compressed_diff>> &compressed, const std::vector<original_data> &diff_max, bool predict);
+    void write_period_to_file(const std::vector<compressed_diff> &compressed, original_data diff_max, bool predict);
 
-    Regulation *regulator_A, *regulator_u, *regulator_homo;
     int debug_total_head_size_byte; // 用于计量所有的时间片中时间片头的大小
     public:
-    State_Machine(std::ofstream &output_fstream, int signal_count);
-    inline static compressed_x x_value_compress(x_value x); // 压缩x值
-    void act(const std::vector<original_data> &data, x_value time, int index, bool debug=true);
+    static Regulation *regulator_A, *regulator_u, *regulator_homo;
+    State_Machine(std::ofstream &output_fstream);
+    void act(original_data data, x_value time, int index, bool debug=true);
+    inline void set_signal_idx(int signal_idx){
+        assert(this->signal_idx == -1);
+        this->signal_idx = signal_idx;
+    }
     int period_count;
     ~State_Machine();
 };

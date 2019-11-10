@@ -16,6 +16,8 @@ typedef unsigned char index_value;
 typedef float compressed_x;
 typedef float original_data_write;
 
+typedef int x_value_idx;
+
 
 // Threshold define
 #define EPSILON (1e-9) // threshold between C and P

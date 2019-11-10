@@ -11,24 +11,31 @@
 void Compressor::compress(){
     reader.Read();
     signal_count = reader.GetSignalCount();
-    state_machine = new State_Machine(output_fstream, signal_count);
+    state_machines = new std::vector<State_Machine>(signal_count, output_fstream);
+    for(int i = 0;i < signal_count;++i){
+        (*state_machines)[i].set_signal_idx(i);
+    }
     signal_names.clear();
     signal_names.reserve(signal_count);
     for(int i = 0;i < signal_count;++i){
         signal_names.push_back(reader.GetSignalName(i));
     }
+    while(!reader_x.IsDataFinished()){
+        reader_x.ReadNextPointData();
+        x_values.push_back(reader_x.GetNextXValue());
+    }
     write_metadata_to_file();
+
+    int index = 0;
     while(!reader.IsDataFinished()){
         reader.ReadNextPointData();
         x_value xValue = reader.GetNextXValue();
-        std::vector<original_data> frame_values(signal_count);
         for(int i = 0;i < signal_count;++i){
-            frame_values[i] = reader.GetNextSignalValue(i);
+            (*state_machines)[i].act(reader.GetNextSignalValue(i), xValue, index);
         }
-        state_machine->act(frame_values, xValue, 0); // TASK: Check this idx
+        index++;
     }
-    std::cout << "[Compressor] period_count:" << state_machine->period_count << std::endl;
-    delete state_machine;
+    delete state_machines;
 }
 
 void Compressor::write_metadata_to_file (){
@@ -38,6 +45,11 @@ void Compressor::write_metadata_to_file (){
     for(const auto &name : signal_names){
         output_fstream << name; // 写入信号名称
         output_fstream << '\n';
+    }
+    int frame_number = x_values.size();
+    output_fstream.write((char*)&frame_number, sizeof(frame_number));
+    for(int i = 0;i < frame_number;++i){
+        output_fstream.write((char*)&x_values[i], sizeof(x_values[i]));
     }
 }
 
