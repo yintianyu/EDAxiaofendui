@@ -49,7 +49,7 @@ class State_Machine{
     void save_period();
     void reset();
     void perform_regulation(std::vector<original_data> &to_be_compressed, original_data max_diff, original_data min_diff, 
-        std::vector<compressed_diff> compressed);
+        std::vector<compressed_diff> &compressed);
 
     void write_period_to_file(const std::vector<compressed_diff> &compressed, original_data diff_max, bool predict);
 

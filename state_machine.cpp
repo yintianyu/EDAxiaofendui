@@ -27,6 +27,7 @@ period_count(0){
 }
 
 void State_Machine::act(original_data data, x_value time, int index, bool debug){
+    assert(signal_idx >= 0);
     if(state == IDLE){
         base = data;
         base_time = time;
@@ -54,7 +55,7 @@ void State_Machine::act(original_data data, x_value time, int index, bool debug)
         return;
     }
     if(state == RUN){
-        std::cout << std::endl;       
+        // std::cout << std::endl;       
         // 检查范数是否满足beta, 斜率和一开始的是不是差的太多
         original_data diff_sum = 0;
         original_data slope_local;
@@ -110,7 +111,7 @@ void State_Machine::save_period(){
     std::vector<original_data> to_be_compressed;
     original_data diff_max;
     original_data diff_min;
-    // std::cout << "frame length: " << frames.size() << std::endl;
+    std::cout << "[save_period] signal_idx: " << signal_idx << " period No." << period_count << " frame length: " << frames.size() << std::endl;
     if(c_count > YITA){ // 全部都压缩存储
         compressed.reserve(frames.size());
         to_be_compressed.reserve(frames.size());
@@ -151,7 +152,7 @@ void State_Machine::save_period(){
 }
 
 void State_Machine::perform_regulation(std::vector<original_data> &to_be_compressed, original_data max_diff, original_data min_diff, 
-        std::vector<compressed_diff> compressed){
+        std::vector<compressed_diff> &compressed){
     if(max_diff - min_diff >= THRESHOLD_HOMO_INHOMO){ // 非均匀量化
         if(small_signal_count * 2 < (int)frames.size()){ // 大信号比较多用A律
             regulator_A->compress(to_be_compressed, max_diff, compressed);
@@ -172,6 +173,8 @@ void State_Machine::write_period_to_file(const std::vector<compressed_diff> &com
     // 先写入时间片头
     assert(output_fstream);
     uint8_t frame_count = frames.size();
+    output_fstream.write((char*)&signal_idx, sizeof(signal_idx)); // 所属信号
+    debug_total_head_size_byte += sizeof(signal_idx);
     output_fstream.write((char*)&frame_count, sizeof(frame_count)); // 帧数N
     debug_total_head_size_byte += sizeof(frame_count);
     output_fstream.write((char*)&predict, sizeof(char)); // 是否预测
@@ -193,13 +196,13 @@ void State_Machine::write_period_to_file(const std::vector<compressed_diff> &com
     }
     {
         original_data_write tmp = slope;
-        output_fstream.write((char*)&tmp, sizeof(tmp));
+        output_fstream.write((char*)&tmp, sizeof(tmp)); // 每个信号的slope
         debug_total_head_size_byte += sizeof(tmp);
     }
     if(predict){
         uint16_t c_frames_number = c_idxes.size();
-        // std::cout << c_idxes.size() << " " << compressed.size() << " " << compressed[0].size() << std::endl;
-        assert(c_idxes.size() == compressed[0].size());
+        // std::cout << c_idxes.size() << " " << compressed.size() << " " << std::endl;
+        assert(c_idxes.size() == compressed.size());
         output_fstream.write((char*)&c_frames_number, sizeof(c_frames_number)); // 有多少帧需要被压缩
         for(int i = 0;i < c_frames_number;++i){
             output_fstream.write((char*)&c_idxes[i], sizeof(c_idxes[i])); // 记录每个被压缩的帧的编号
@@ -226,8 +229,10 @@ void State_Machine::reset(){
 }
 
 State_Machine::~State_Machine(){
-    save_period();
-    std::cout << "State Machine total head size(byte): " << debug_total_head_size_byte << std::endl;
+    if(signal_idx >= 0)
+        save_period();
+    std::cout << "Signal No." << signal_idx << "State Machine total head size(byte): " << debug_total_head_size_byte;
+    std::cout << " Period Number: " << period_count << std::endl;
     // delete regulator_u;
     // delete regulator_homo;
     // delete regulator_A;

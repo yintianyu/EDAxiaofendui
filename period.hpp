@@ -27,13 +27,13 @@ struct X_CompressVals_Pair{
 // Class to describe time period, similar to State_Machine
 class Period{
     private:
+    int signal_idx;
     std::ifstream &input_fstream;
-    int signal_count;
 
-    std::vector<original_data> base;
-    x_value base_time;
+    original_data base;
+    int base_time;
     int base_idx;
-    std::vector<original_data> slope;
+    original_data slope;
     enum State{IDLE, INIT, RUN} state;
     std::vector<X_CompressVals_Pair> c_frames;
     std::vector<X_CompressVals_Pair> frames;
@@ -46,32 +46,32 @@ class Period{
 
     x_value end_time; // 最后一帧的时间
 
-    std::vector<original_data> diff_max;
+    original_data diff_max;
 
     void read_head();
-    WaveformOutputterForCompetition &outputter;
-    Regulation *regulator_A;
-    Regulation *regulator_u;
-    Regulation *regulator_homo;
+    static Regulation *regulator_A;
+    static Regulation *regulator_u;
+    static Regulation *regulator_homo;
 
-    std::vector<REGULATION_TYPE> regulation_types;
+    REGULATION_TYPE regulation_type;
 
     
     public:
-    Period(std::ifstream &input_fstream, int signal_count, WaveformOutputterForCompetition &outputter):input_fstream(input_fstream), signal_count(signal_count), outputter(outputter), regulation_types(signal_count){
-        regulator_A = new A_Regulation();
-        regulator_u = new u_Regulation();
-        regulator_homo = new Homo_Regulation();
+    Period(std::ifstream &input_fstream):input_fstream(input_fstream){
+        // regulator_A = new A_Regulation();
+        // regulator_u = new u_Regulation();
+        // regulator_homo = new Homo_Regulation();
         period_count = 0;
     }
-    inline static x_value x_value_decompress(compressed_x compressed);
-    void decompress(const std::vector<int> &decompress_idxes, x_value &start, x_value &end);
+    void decompress(std::vector<original_data> &result);
+    void pseudo_decompress();
     ~Period(){
-        delete regulator_A;
-        delete regulator_u;
-        delete regulator_homo;
+        // delete regulator_A;
+        // delete regulator_u;
+        // delete regulator_homo;
     }
     int period_count;
+    static x_value *x_values; // x_values数组
 };
 
 

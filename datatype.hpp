@@ -22,12 +22,12 @@ typedef int x_value_idx;
 // Threshold define
 #define EPSILON (1e-9) // threshold between C and P
 #define YITA ((int)(frames.size() * 3 / 4))
-#define BETA (5)
+#define BETA (15)
 #define ALPHA (255)
 
 #define THRESHOLD_HOMO_INHOMO (1e-4) // 差值的最大值最小值之差的阈值，决定采用均匀量化还是非均匀量化
 
-#define IDENTIFER (0x1234)
+#define IDENTIFIER (0x1234)
 
 typedef enum {REGU_A, REGU_U, REGU_HOMO} REGULATION_TYPE; //这个Period采用的规约手段，A律，u律还是均匀量化
 typedef unsigned char regulation_type_write;
