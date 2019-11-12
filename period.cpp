@@ -34,6 +34,11 @@ void Period::read_head(){
 void Period::decompress(std::vector<original_data> &result, bool debug){
     read_head();
     result.resize(frame_count);
+    #ifdef DEBUG
+    if(debug){
+        std::cout << "[DEBUGPERIOD] base=" << base << " slope=" << slope << std::endl; 
+    }
+    #endif
     if(predict){
         uint16_t c_frames_number;
         input_fstream.read((char*)&c_frames_number, sizeof(c_frames_number));
@@ -66,7 +71,7 @@ void Period::decompress(std::vector<original_data> &result, bool debug){
         #ifdef DEBUG
             if(debug){
                 for(auto i:decompressed){
-                    std::cout << "[REGULATION] " << i << std::endl;
+                    std::cout << "[DEBUGPERIOD] [REGULATION] " << i << std::endl;
                 }
             }
         #endif
@@ -115,7 +120,7 @@ void Period::decompress(std::vector<original_data> &result, bool debug){
         #ifdef DEBUG
             if(debug){
                 for(auto i:decompressed){
-                    std::cout << "[REGULATION] " << i << std::endl;
+                    std::cout << "[DEBUGPERIOD] [REGULATION] " << i << std::endl;
                 }
             }
         #endif

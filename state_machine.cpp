@@ -70,7 +70,10 @@ void State_Machine::act(original_data data, x_value time, int index, bool debug)
         if(fabs(slope_local) <= SLOPE_ZERO && fabs(slope) > SLOPE_ZERO){ // 需要回溯
             original_data last_data = frames[last_idx].value;
             x_value x = frames[last_idx].x;
-            std::cout << "[DIVIDE PERIOD] signal_idx:" << signal_idx << " Period No." << period_count << " SLOPE_ZERO" << std::endl;
+            #ifdef DEBUG
+            if(signal_idx == DEBUG_SIGNAL)
+                std::cout << "[DIVIDE PERIOD] Period No." << period_count << " SLOPE_ZERO" << std::endl;
+            #endif
             frames.pop_back();
             save_period();
             reset();
@@ -82,21 +85,37 @@ void State_Machine::act(original_data data, x_value time, int index, bool debug)
             slope_ok = false;
         }
         if(diff_sum / reference_sum > BETA || !slope_ok/* || diff_time / predict_step > X_STEP_BETA*/){
-            if(!slope_ok)
-                std::cout << "[DIVIDE PERIOD] signal_idx:" << signal_idx << " Period No." << period_count << " slope_ok " << std::endl;// << (data == 0 && frames[last_idx].value != 0) << " " << (slope_local != 0 && slope == 0) << " " << (fabs((slope_local - slope) / (slope + 1e-25)) > SLOPE_ERROR_BETA) << " " << fabs((slope_local - slope) / (slope + 1e-25)) << " " << slope_local << " " << slope <<std::endl;
-            else
-                std::cout << "[DIVIDE PERIOD] signal_idx:" << signal_idx << " Period No." << period_count << " BETA" << std::endl;
+            #ifdef DEBUG
+            if(signal_idx == DEBUG_SIGNAL){
+                if(!slope_ok)
+                    std::cout << "[DIVIDE PERIOD] Period No." << period_count << " slope_ok " << std::endl;// << (data == 0 && frames[last_idx].value != 0) << " " << (slope_local != 0 && slope == 0) << " " << (fabs((slope_local - slope) / (slope + 1e-25)) > SLOPE_ERROR_BETA) << " " << fabs((slope_local - slope) / (slope + 1e-25)) << " " << slope_local << " " << slope <<std::endl;
+                else
+                    std::cout << "[DIVIDE PERIOD] Period No." << period_count << " BETA" << std::endl;
+            }
+            #endif
             save_period();
             reset();
             act(data, time, index, false);
             return;
         }
-        frames.push_back(X_Vals_Pair(time, data));
         bool isPredict = true;
         original_data predict = base + slope * (time - base_time);
-        if(fabs(predict - data) > EPSILON){
+        original_data diff = fabs(predict - data);
+        if(diff / fabs(data) > THRESHOLD_DIFF_DATA_RATIO){ // diff占data比过大，重新分P
+            #ifdef DEBUG
+            if(signal_idx == DEBUG_SIGNAL){
+                std::cout << "[DIVIDE PERIOD] Period No." << period_count << " THRESHOLD_DIFF_DATA_RATIO diff=" << diff << " data=" << fabs(data) << " ratio=" << diff/fabs(data) << std::endl;
+            }
+            #endif
+            save_period();
+            reset();
+            act(data, time, index, false);
+            return;
+        }
+        if(diff > EPSILON){
             isPredict = false;
         }
+        frames.push_back(X_Vals_Pair(time, data));
         if(!isPredict){
             c_count += 1;
             c_frames.push_back(X_Vals_Pair(time, data));
@@ -105,7 +124,10 @@ void State_Machine::act(original_data data, x_value time, int index, bool debug)
         // 帧的长度是否满足ALPHA
         // std::cout << "diff_sum / reference_sum = " << diff_sum / reference_sum << std::endl;
         if(frames.size() >= ALPHA){
-            std::cout << "[DIVIDE PERIOD] signal_idx:" << signal_idx << " Period No." << period_count << " ALPHA" << std::endl;
+            #ifdef DEBUG
+            if(signal_idx == DEBUG_SIGNAL)
+                std::cout << "[DIVIDE PERIOD] Period No." << period_count << " ALPHA" << std::endl;
+            #endif
             save_period();
             reset();
         }

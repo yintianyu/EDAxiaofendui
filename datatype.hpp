@@ -20,10 +20,12 @@ typedef int x_value_idx;
 
 
 // Threshold define
-#define EPSILON (1e-9) // threshold between C and P
+#define EPSILON (1e-4) // 调整为1e-4因为regulaiton的精度大概就是如此threshold between C and P
 #define YITA ((int)(frames.size() * 3 / 4))
 #define BETA (15)
 #define ALPHA (255)
+
+#define THRESHOLD_DIFF_DATA_RATIO (1e-2) // 如果diff和data的比值超过该值，则重新分P
 
 #define THRESHOLD_HOMO_INHOMO (1e-4) // 差值的最大值最小值之差的阈值，决定采用均匀量化还是非均匀量化
 
@@ -48,6 +50,7 @@ typedef uint16_t compressed_diff_write; // 写入文件的类型，如果使用s
 #define SLOPE_ERROR_BETA (1.5) // 斜率的相对误差阈值
 #define SLOPE_ZERO (100) // 斜率绝对值为0的阈值
 
-#define DEBUG_PERIOD (96) // 用于debug的打印周期
-#define DEBUG_SIGNAL (0) // 用于debug的信号
+
+#define DEBUG_PERIOD (46) // 用于debug的打印周期
+#define DEBUG_SIGNAL (1) // 用于debug的信号
 #endif
