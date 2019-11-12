@@ -27,7 +27,7 @@ class State_Machine{
     int signal_idx; // 本状态机负责的信号编号
 
     original_data base;
-    x_value_idx base_time;
+    x_value base_time;
     int base_idx;
     int base_count;
     original_data slope;

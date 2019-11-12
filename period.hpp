@@ -31,12 +31,11 @@ class Period{
     std::ifstream &input_fstream;
 
     original_data base;
-    int base_time;
+    x_value base_time;
     int base_idx;
     original_data slope;
     enum State{IDLE, INIT, RUN} state;
     std::vector<X_CompressVals_Pair> c_frames;
-    std::vector<X_CompressVals_Pair> frames;
     uint8_t frame_count;
 
     int c_count; // Frames need compressing

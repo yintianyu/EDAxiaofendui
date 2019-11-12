@@ -14,7 +14,7 @@ typedef double original_data;
 typedef double x_value;
 typedef unsigned char index_value;
 typedef float compressed_x;
-typedef float original_data_write;
+typedef double original_data_write;
 
 typedef int x_value_idx;
 
@@ -51,6 +51,6 @@ typedef uint16_t compressed_diff_write; // 写入文件的类型，如果使用s
 #define SLOPE_ZERO (100) // 斜率绝对值为0的阈值
 
 
-#define DEBUG_PERIOD (46) // 用于debug的打印周期
+#define DEBUG_PERIOD (20) // 用于debug的打印周期
 #define DEBUG_SIGNAL (1) // 用于debug的信号
 #endif

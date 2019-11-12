@@ -28,10 +28,16 @@ period_count(0){
 
 void State_Machine::act(original_data data, x_value time, int index, bool debug){
     assert(signal_idx >= 0);
+    #ifdef DEBUG
     if(debug && signal_idx == DEBUG_SIGNAL){
-        std::cout << "[DEBUG] data=" << data << " time=" << time << " period_count=" << period_count << std::endl;
+        std::cout << "[DEBUG] data=" << data << " time=" << time << " period_count=" << period_count;
     }
+    #endif
     if(state == IDLE){
+        #ifdef DEBUG
+        if(debug && signal_idx == DEBUG_SIGNAL)
+            std::cout << std::endl;
+        #endif
         base = data;
         base_time = time;
         base_idx = index;// TASK: Check this
@@ -55,10 +61,17 @@ void State_Machine::act(original_data data, x_value time, int index, bool debug)
         state = RUN;
         frames.push_back(X_Vals_Pair(time, data));
         predict_step = time - base_time;
+        #ifdef DEBUG
+        if(debug && signal_idx == DEBUG_SIGNAL)
+            std::cout << " slope=" << slope << " data=" << data << " base=" << base << " time=" << time << "base_time=" << base_time << std::endl;
+        #endif
         return;
     }
     if(state == RUN){
-        // std::cout << std::endl;       
+        #ifdef DEBUG
+        if(debug && signal_idx == DEBUG_SIGNAL)
+            std::cout << std::endl;
+        #endif      
         // 检查范数是否满足beta, 斜率和一开始的是不是差的太多
         original_data diff_sum = 0;
         original_data slope_local;
@@ -180,7 +193,7 @@ void State_Machine::save_period(){
 #ifdef DEBUG
     if(signal_idx == DEBUG_SIGNAL && period_count == DEBUG_PERIOD){
         for(auto i:to_be_compressed){
-            std::cout << "[REGULATION] " << i << std::endl;
+            std::cout << "[DEBUGPERIOD] [REGULATION] " << i << std::endl;
         }
     }
 #endif

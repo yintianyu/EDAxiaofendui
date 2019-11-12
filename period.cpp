@@ -6,10 +6,9 @@ x_value *Period::x_values = nullptr;
 void Period::read_head(){
     // input_fstream.read((char*)&signal_idx, sizeof(signal_idx)); // 所属信号
     input_fstream.read((char*)&frame_count, sizeof(frame_count)); // 帧数
-    frames.resize(frame_count);
     input_fstream.read((char*)&predict, sizeof(predict)); // 是否预测
     input_fstream.read((char*)&base_idx, sizeof(base_idx)); // 开始时间
-    frames[0].x = x_values[base_idx];
+    base_time = x_values[base_idx];
     // input_fstream.read((char*)&end_time, sizeof(end_time)); // 结束时间
     regulation_type_write tmp;
     input_fstream.read((char*)&tmp, sizeof(tmp)); // 规约方案
@@ -65,8 +64,8 @@ void Period::decompress(std::vector<original_data> &result, bool debug){
                 regulator_homo->decompress(compressed, diff_max, decompressed);
                 break; 
             default:
-                std::cerr << "egulation_type error, die" << std::endl;
-                exit(1);                   
+                std::cerr << "regulation_type error, die" << std::endl;
+                exit(1);
         }
         #ifdef DEBUG
             if(debug){
