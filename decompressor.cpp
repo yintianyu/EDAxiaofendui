@@ -49,6 +49,7 @@ void Decompressor::decompress(const std::vector<std::string> &names){
     Period *period = new Period(input_fstream);
     std::thread write_th(&Decompressor::write_data_to_file, this);
     std::vector<original_data> result;
+    int debug_period_count = 0;
     while(input_fstream.peek() != EOF){
         result.clear();
         int signal_idx;
@@ -59,11 +60,17 @@ void Decompressor::decompress(const std::vector<std::string> &names){
             period->pseudo_decompress(); // 跳过这个period
         }
         else{
-            period->decompress(result);
+            period->decompress(result, signal_idx == DEBUG_SIGNAL && debug_period_count == DEBUG_PERIOD);
         }
         buffer_mutex.lock();
         for(const auto &element:result){
             output_buffer[decompress_idx].push(element);
+            if(signal_idx == DEBUG_SIGNAL){
+                std::cout << "[DEBUG] data=" << element << " Period No." << debug_period_count << std::endl;
+            }
+        }
+        if(signal_idx == DEBUG_SIGNAL){
+            debug_period_count += 1;
         }
         buffer_mutex.unlock();
     }
@@ -101,6 +108,7 @@ void Decompressor::write_data_to_file(){
     while(current_frame < frame_count){
         bool ready = true;
         int write_number = 2147483647;
+        buffer_mutex.lock();
         for(const auto &list_per_signal:output_buffer){
             if(list_per_signal.size() == 0){
                 ready = false;
@@ -111,7 +119,6 @@ void Decompressor::write_data_to_file(){
             }
         }
         if(ready){
-            buffer_mutex.lock();
             for(int i = 0;i < write_number;++i){
                 outputter.OutputXValue(Period::x_values[current_frame]);
                 for(auto &list_per_signal:output_buffer){
@@ -125,6 +132,7 @@ void Decompressor::write_data_to_file(){
         }
         else{
             // TODO: yield
+            buffer_mutex.unlock();
             std::this_thread::yield();
         }
     }

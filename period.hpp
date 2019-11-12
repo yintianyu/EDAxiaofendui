@@ -63,7 +63,7 @@ class Period{
         // regulator_homo = new Homo_Regulation();
         period_count = 0;
     }
-    void decompress(std::vector<original_data> &result);
+    void decompress(std::vector<original_data> &result, bool debug=false);
     void pseudo_decompress();
     ~Period(){
         // delete regulator_A;

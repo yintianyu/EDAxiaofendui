@@ -48,5 +48,6 @@ typedef uint16_t compressed_diff_write; // 写入文件的类型，如果使用s
 #define SLOPE_ERROR_BETA (1.5) // 斜率的相对误差阈值
 #define SLOPE_ZERO (100) // 斜率绝对值为0的阈值
 
-#define DEBUG_PERIOD (24) // 用于debug的打印周期
+#define DEBUG_PERIOD (96) // 用于debug的打印周期
+#define DEBUG_SIGNAL (0) // 用于debug的信号
 #endif

@@ -31,7 +31,7 @@ void Period::read_head(){
     }
 }
 
-void Period::decompress(std::vector<original_data> &result){
+void Period::decompress(std::vector<original_data> &result, bool debug){
     read_head();
     result.resize(frame_count);
     if(predict){
@@ -63,14 +63,26 @@ void Period::decompress(std::vector<original_data> &result){
                 std::cerr << "egulation_type error, die" << std::endl;
                 exit(1);                   
         }
+        #ifdef DEBUG
+            if(debug){
+                for(auto i:decompressed){
+                    std::cout << "[REGULATION] " << i << std::endl;
+                }
+            }
+        #endif
         result[0] = base;
         int c_idx_i = 0; // 用以记录现在c_idx到哪了
         for(int i = 1;i < frame_count;++i){
             original_data predict_value;
-            predict_value = slope * (x_values[i] - base_time) + base;
+            predict_value = slope * (x_values[base_idx + i] - base_time) + base;
+            #ifdef DEBUG
+            if(debug){
+                std::cout << "[DEBUGPERIOD] x=" << x_values[base_idx + i] << std::endl;
+            }
+            #endif
             if(c_frames_number > 0 && i == c_idxes[c_idx_i]){
-                c_idx_i++;
                 result[i] = predict_value + decompressed[c_idx_i];
+                c_idx_i++;
             }
             else{
                 result[i] = predict_value;
@@ -100,10 +112,22 @@ void Period::decompress(std::vector<original_data> &result){
                 std::cerr << "egulation_type error, die" << std::endl;
                 exit(1);                   
         }
+        #ifdef DEBUG
+            if(debug){
+                for(auto i:decompressed){
+                    std::cout << "[REGULATION] " << i << std::endl;
+                }
+            }
+        #endif
         result[0] = base;
         for(int i = 1;i < frame_count;++i){
             original_data predict_value;
-            predict_value = slope * (x_values[i] - base_time) + base + decompressed[i];
+            predict_value = slope * (x_values[base_idx + i] - base_time) + base + decompressed[i];
+            #ifdef DEBUG
+            if(debug){
+                std::cout << "[DEBUGPERIOD] x=" << x_values[base_idx + i] << " decompressed=" << decompressed[i] << std::endl;
+            }
+            #endif
             result[i] = predict_value;
         }
     }
