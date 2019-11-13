@@ -10,7 +10,9 @@
 
 #include <fstream>
 #include <string>
+#include <queue>
 #include <vector>
+#include <mutex>
 #include "datatype.hpp"
 #include "outputter/WaveformOutputterForCompetition.h"
 #include "outputter/BasicException.h"
@@ -25,13 +27,18 @@ class Decompressor{
     private:
     std::ifstream input_fstream;
     WaveformOutputterForCompetition outputter;
-    int identifer_expect;
+    int identifier_expect;
     int signal_count;
     std::vector<std::string> signal_names;
     std::vector<int> decompress_idxes;
+    int frame_count;
+    std::vector<std::queue<original_data>> output_buffer; // 缓存即将输出到文件中的内容
+
+    std::mutex buffer_mutex; // 用来管理output_buffer的锁
 
 
     int read_metadata();
+    void write_data_to_file();
 };
 
 #endif

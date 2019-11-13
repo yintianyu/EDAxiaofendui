@@ -13,7 +13,7 @@ void Homo_Regulation :: compress(const std::vector<original_data> &input_diff, o
     unsigned int maxVal = 1 << (s-1);
     for (auto i = input_diff.begin(); i != input_diff.end(); ++i) {
         compressed_diff res;
-        original_data normDiff = abs(*i) / max;
+        original_data normDiff = fabs(*i) / max;
         res = normDiff == 1 ? (maxVal - 1) : normDiff * maxVal;
         res[s-1] = *i < 0 ? 1 : 0;
         output_compressed_diff.push_back(res);

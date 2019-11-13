@@ -1,58 +1,163 @@
 #include "period.hpp"
 #include <iostream>
 
-x_value Period::x_value_decompress(compressed_x compressed){
-    // int count = compressed & X_COUNT_MASK;
-    // x_value val = compressed >> X_VALUE_DEVIDE;
-    // // std::cout << "[x_value_decompress] count=" << count << std::endl;
-    // // std::cout << "[x_value_decompress] val=" << val << std::endl;
-    // for(int i = 0;i < count;++i){ // FIX ME：暂时先用这么挫的
-    //     val /= X_VALUE_STEP;
-    //     // std::cout << "[x_value_decompress] val=" << val << std::endl;
-    // }
-    // return val;
-    return compressed;
-}
+x_value *Period::x_values = nullptr;
 
 void Period::read_head(){
+    // input_fstream.read((char*)&signal_idx, sizeof(signal_idx)); // 所属信号
     input_fstream.read((char*)&frame_count, sizeof(frame_count)); // 帧数
-    frames.resize(frame_count);
     input_fstream.read((char*)&predict, sizeof(predict)); // 是否预测
-    input_fstream.read((char*)&base_time, sizeof(base_time)); // 开始时间
-    frames[0].x = base_time;
+    input_fstream.read((char*)&base_idx, sizeof(base_idx)); // 开始时间
+    base_time = x_values[base_idx];
     // input_fstream.read((char*)&end_time, sizeof(end_time)); // 结束时间
-    for(int i = 0;i < signal_count;++i){
-        regulation_type_write tmp;
-        input_fstream.read((char*)&tmp, sizeof(tmp)); // 规约方案
-        regulation_types[i] = (REGULATION_TYPE)tmp;
-    }
-    diff_max.resize(signal_count);
-    base.resize(signal_count);
-    slope.resize(signal_count);
-    for(int i = 0;i < signal_count;++i){
+    regulation_type_write tmp;
+    input_fstream.read((char*)&tmp, sizeof(tmp)); // 规约方案
+    regulation_type = (REGULATION_TYPE)tmp;
+    {
         original_data_write tmp;
         input_fstream.read((char*)&tmp, sizeof(tmp)); // 每个信号的误差最大值
-        diff_max[i] = tmp;
+        diff_max = tmp;
     }
-    for(int i = 0;i < signal_count;++i){
+    {
         original_data_write tmp;
         input_fstream.read((char*)&tmp, sizeof(tmp)); // 每个信号的base
-        base[i] = tmp;
+        base = tmp;
     }
-    for(int i = 0;i < signal_count;++i){
+    {
         original_data_write tmp;
         input_fstream.read((char*)&tmp, sizeof(tmp)); // 每个信号的slope
-        slope[i] = tmp;
-    }
-    for(int i = 1;i < frame_count;++i){
-        compressed_x tmp;
-        input_fstream.read((char*)&tmp, sizeof(tmp));
-        x_value diff = x_value_decompress(tmp);
-        frames[i].x = frames[i-1].x + diff; // x值拿过来
+        slope = tmp;
     }
 }
 
-void Period::decompress(const std::vector<int> &decompress_idxes, x_value &start, x_value &end){
+void Period::decompress(std::vector<original_data> &result, bool debug, int debug_signal_idx, int debug_period_count){
+    read_head();
+    result.resize(frame_count);
+    #ifdef DEBUG
+    if(debug){
+        std::cout << "[DEBUGPERIOD] base=" << base << " slope=" << slope << std::endl; 
+    }
+    #endif
+    if(predict){
+        uint16_t c_frames_number;
+        input_fstream.read((char*)&c_frames_number, sizeof(c_frames_number));
+        c_idxes.resize(c_frames_number);
+        for(int i = 0;i < c_frames_number;++i){
+            input_fstream.read((char*)&c_idxes[i], sizeof(c_idxes[i])); // 记录每个被压缩的帧的编号
+        }
+        std::vector<compressed_diff> compressed;
+        compressed.resize(c_frames_number);
+        for(int i = 0;i < c_frames_number;++i){
+            compressed_diff_write1 w1;
+            compressed_diff_write2 w2;
+            uint32_t tmp;
+            input_fstream.read((char*)&w1, sizeof(w1)); // 压缩后的差值
+            input_fstream.read((char*)&w2, sizeof(w2)); // 压缩后的差值
+            tmp = w1 + (w2 << 16);
+            compressed[i] = tmp;
+        }
+        std::vector<original_data> decompressed;
+        switch(regulation_type){
+            case REGU_A:
+                regulator_A->decompress(compressed, diff_max, decompressed);
+                break;
+            case REGU_U:
+                regulator_u->decompress(compressed, diff_max, decompressed);
+                break;
+            case REGU_HOMO:
+                regulator_homo->decompress(compressed, diff_max, decompressed);
+                break; 
+            default:
+                std::cerr << "regulation_type error, die" << std::endl;
+                exit(1);
+        }
+        #ifdef DEBUG
+            if(debug){
+                for(auto i:decompressed){
+                    std::cout << "[DEBUGPERIOD] [REGULATION] " << i << " regulation_type=" << (int)regulation_type << std::endl;
+                }
+            }
+        #endif
+        result[0] = base;
+        int c_idx_i = 0; // 用以记录现在c_idx到哪了
+        for(int i = 1;i < frame_count;++i){
+            original_data predict_value;
+            predict_value = slope * (x_values[base_idx + i] - base_time) + base;
+            #ifdef DEBUG
+            if(debug){
+                std::cout << "[DEBUGPERIOD] x=" << x_values[base_idx + i] << std::endl;
+            }
+            #endif
+            if(c_frames_number > 0 && i == c_idxes[c_idx_i]){
+                result[i] = predict_value + decompressed[c_idx_i];
+                c_idx_i++;
+            }
+            else{
+                result[i] = predict_value;
+            }
+        }
+    }
+    else{
+        // Reserved for Boris Johnson;
+        std::vector<compressed_diff> compressed(frame_count);
+        for(int i = 0;i < frame_count;++i){
+            compressed_diff_write1 w1;
+            compressed_diff_write2 w2;
+            uint32_t tmp;
+            input_fstream.read((char*)&w1, sizeof(w1)); // 压缩后的差值
+            input_fstream.read((char*)&w2, sizeof(w2)); // 压缩后的差值
+            tmp = w1 + (w2 << 16);
+            compressed[i] = tmp;
+        }
+        std::vector<original_data> decompressed;
+        switch(regulation_type){
+            case REGU_A:
+                regulator_A->decompress(compressed, diff_max, decompressed);
+                break;
+            case REGU_U:
+                regulator_u->decompress(compressed, diff_max, decompressed);
+                break;
+            case REGU_HOMO:
+                regulator_homo->decompress(compressed, diff_max, decompressed);
+                break; 
+            default:
+                std::cerr << "egulation_type error, die" << std::endl;
+                exit(1);                   
+        }
+        #ifdef DEBUG
+            if(debug){
+                for(auto i:decompressed){
+                    std::cout << "[DEBUGPERIOD] [REGULATION] " << i << std::endl;
+                }
+            }
+        #endif
+        result[0] = base;
+        for(int i = 1;i < frame_count;++i){
+            original_data predict_value;
+            predict_value = slope * (x_values[base_idx + i] - base_time) + base + decompressed[i];
+            #ifdef DEBUG
+            if(debug){
+                std::cout << "[DEBUGPERIOD] x=" << x_values[base_idx + i] << " decompressed=" << decompressed[i] << std::endl;
+            }
+            #endif
+            result[i] = predict_value;
+        }
+    }
+    #ifdef DEBUG
+    if(debug_signal_idx == DEBUG_SIGNAL){
+        for(int i = 0;i < (int)result.size();++i)
+            if(x_values[base_idx + i] > DEBUG_TIME - DEBUG_TIME_RANGE && x_values[base_idx + i] < DEBUG_TIME + DEBUG_TIME_RANGE)
+                std::cout << "[DEBUG] data=" << result[i] << " Period No." << debug_period_count << std::endl;
+    }
+    std::cout << "[Decompress] Period No." << period_count << " frame number: " << (int)frame_count << std::endl;
+    #endif
+    ++period_count;
+}
+
+/*
+ * 只读文件，不处理
+ */
+void Period::pseudo_decompress(){
     read_head();
     if(predict){
         uint16_t c_frames_number;
@@ -61,138 +166,17 @@ void Period::decompress(const std::vector<int> &decompress_idxes, x_value &start
         for(int i = 0;i < c_frames_number;++i){
             input_fstream.read((char*)&c_idxes[i], sizeof(c_idxes[i])); // 记录每个被压缩的帧的编号
         }
-        std::vector<std::vector<compressed_diff>> compressed(signal_count);
-        for(int i = 0;i < signal_count;++i){
-            compressed[i].resize(c_frames_number);
-        }
         for(int i = 0;i < c_frames_number;++i){
-            for(int j = 0;j < signal_count;++j){
-                compressed_diff_write tmp;
-                input_fstream.read((char*)&tmp, sizeof(tmp)); // 压缩后的差值
-                compressed[j][i] = tmp;
-            }
-        }
-        std::vector<std::vector<original_data>> decompressed(decompress_idxes.size());
-        int decompressed_i = 0;
-        for(auto decompress_idx:decompress_idxes){
-            switch(regulation_types[decompress_idx]){
-                case REGU_A:
-                    regulator_A->decompress(compressed[decompress_idx], diff_max[decompress_idx], decompressed[decompressed_i++]);
-                    break;
-                case REGU_U:
-                    regulator_u->decompress(compressed[decompress_idx], diff_max[decompress_idx], decompressed[decompressed_i++]);
-                    break;
-                case REGU_HOMO:
-                    regulator_homo->decompress(compressed[decompress_idx], diff_max[decompress_idx], decompressed[decompressed_i++]);
-                    break; 
-                default:
-                    std::cerr << "egulation_type error, die" << std::endl;
-                    exit(1);                   
-            }
-        }
-        outputter.OutputXValue(frames[0].x);
-        for(int idx:decompress_idxes){
-            outputter.OutputSignalValue(base[idx]);
-        }
-        if(period_count == 0 || true){
-            std::cout << "[DEBUG] Period: " << period_count << " time: " << base_time << " data[0]: " << base[0] << " slope[0]: " << slope[0] << std::endl;
-        }
-        outputter.FinishOnePointData();
-        int c_idx_i = 0; // 用以记录现在c_idx到哪了
-        int decompress_number = decompress_idxes.size();
-        for(int i = 1;i < frame_count;++i){
-            outputter.OutputXValue(frames[i].x);
-            std::vector<original_data> predict_values(decompress_number);
-            for(int j = 0;j < decompress_number;++j){
-                predict_values[j] = slope[decompress_idxes[j]] * (frames[i].x - base_time) + base[decompress_idxes[j]];
-            }
-            if(c_frames_number > 0 && i == c_idxes[c_idx_i]){
-                c_idx_i++;
-                for(int j = 0;j < decompress_number;++j){
-                    outputter.OutputSignalValue(predict_values[j] + decompressed[j][c_idx_i]);
-                }
-                if(period_count == 0 || true){
-                    std::cout << "[DEBUG] Period: " << period_count << " time: " << frames[i].x << " data[0]: " << predict_values[0] + decompressed[0][i] << std::endl;
-                }
-            }
-            else{
-                for(int j = 0;j < decompress_number;++j){
-                    outputter.OutputSignalValue(predict_values[j]);
-                }
-                if(period_count == 0 || true){
-                    std::cout << "[DEBUG] Period: " << period_count << " time: " << frames[i].x << " data[0]: " << predict_values[0] << std::endl;
-                }
-            }
-            outputter.FinishOnePointData();
+            compressed_diff_write tmp;
+            input_fstream.read((char*)&tmp, sizeof(tmp)); // 压缩后的差值
         }
     }
     else{
         // Reserved for Boris Johnson;
-        std::vector<std::vector<compressed_diff>> compressed(signal_count);
-        for(int i = 0;i < signal_count;++i){
-            compressed[i].resize(frame_count);
-        }
         for(int i = 0;i < frame_count;++i){
-            for(int j = 0;j < signal_count;++j){
-                compressed_diff_write tmp;
-                input_fstream.read((char*)&tmp, sizeof(tmp)); // 压缩后的差值
-                compressed[j][i] = tmp;
-            }
-        }
-        std::vector<std::vector<original_data>> decompressed(decompress_idxes.size());
-        int decompressed_i = 0;
-        for(auto decompress_idx:decompress_idxes){
-            switch(regulation_types[decompress_idx]){
-                case REGU_A:
-                    regulator_A->decompress(compressed[decompress_idx], diff_max[decompress_idx], decompressed[decompressed_i++]);
-                    break;
-                case REGU_U:
-                    regulator_u->decompress(compressed[decompress_idx], diff_max[decompress_idx], decompressed[decompressed_i++]);
-                    break;
-                case REGU_HOMO:
-                    regulator_homo->decompress(compressed[decompress_idx], diff_max[decompress_idx], decompressed[decompressed_i++]);
-                    break; 
-                default:
-                    std::cerr << "egulation_type error, die" << std::endl;
-                    exit(1);                   
-            }
-        }
-        if(period_count == DEBUG_PERIOD){
-            std::cout << "Check Regulation on Period " << DEBUG_PERIOD << ", type:" << regulation_types[0] << std::endl;
-            for(int i = 0;i < (int)frames.size();++i){
-                std::cout << "decompressed[0][" << i << "]=" << decompressed[0][i] << std::endl;
-            }
-        }
-        outputter.OutputXValue(frames[0].x);
-        for(int idx:decompress_idxes){
-            outputter.OutputSignalValue(base[idx]);
-        }
-        if(period_count == 0 || true){
-            std::cout << "[DEBUG] Period: " << period_count << " time: " << base_time << " data[0]: " << base[0] << " slope[0]: " << slope[0] << std::endl;
-        }
-        outputter.FinishOnePointData();
-        int decompress_number = decompress_idxes.size();
-        for(int i = 1;i < frame_count;++i){
-            outputter.OutputXValue(frames[i].x);
-            std::vector<original_data> predict_values(decompress_number);
-            for(int j = 0;j < decompress_number;++j){
-                predict_values[j] = slope[decompress_idxes[j]] * (frames[i].x - base_time) + base[decompress_idxes[j]] + decompressed[j][i];
-            }
-            for(int j = 0;j < decompress_number;++j){
-                outputter.OutputSignalValue(predict_values[j]);
-            }
-            if(period_count == 0 || true){
-                std::cout << "[DEBUG] Period: " << period_count << " time: " << frames[i].x << " data[0]: " << predict_values[0] << std::endl;
-            }
-            outputter.FinishOnePointData();
+            compressed_diff_write tmp;
+            input_fstream.read((char*)&tmp, sizeof(tmp)); // 压缩后的差值
         }
     }
-    std::cout << "[Decompress] Period No." << period_count << " frame number: " << (int)frame_count << std::endl;
     ++period_count;
-    if(start == -1){
-        start = base_time;
-    }
-    if(end == -1){
-        end = frames[frame_count-1].x;
-    }
 }

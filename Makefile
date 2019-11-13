@@ -1,7 +1,7 @@
 CC      = g++ 
-CPPFLAGS  = -Wall -O0 -g
+CPPFLAGS  = -Wall -DDEBUG -O0 -g
 INCLUDEFLAGS = 
-LDFLAGS = -L lib -l ssdboutputter -l ssdbreader -g
+LDFLAGS = -L lib -l ssdboutputter -l ssdbreader -lpthread -g
 OBJS    = main.o compressor.o A_Regulation.o Homo_Regulation.o state_machine.o u_Regulation.o decompressor.o period.o
 TARGETS = edaxiaofendui 
 
