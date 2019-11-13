@@ -67,16 +67,16 @@ void State_Machine::act(original_data data, x_value time, int index, bool debug)
         #endif
         return;
     }
-    if(state == RUN){
-        #ifdef DEBUG
-        if(debug && signal_idx == DEBUG_SIGNAL && time > DEBUG_TIME - DEBUG_TIME_RANGE && time < DEBUG_TIME + DEBUG_TIME_RANGE)
-            std::cout << std::endl;
-        #endif      
+    if(state == RUN){    
         // 检查范数是否满足beta, 斜率和一开始的是不是差的太多
         original_data diff_sum = 0;
         original_data slope_local;
         bool slope_ok = true; // 用于检查当前slope和base的slope差距是不是过大
         diff_sum = fabs(data - base);
+        #ifdef DEBUG
+        if(debug && signal_idx == DEBUG_SIGNAL && time > DEBUG_TIME - DEBUG_TIME_RANGE && time < DEBUG_TIME + DEBUG_TIME_RANGE)
+            std::cout << " diff=" << diff_sum << std::endl;
+        #endif 
         small_signal_count += fabs(data) < 1 ? 1 : 0;
         int last_idx = frames.size()-1;
         slope_local = (data - frames[last_idx].value) / (time - frames[last_idx].x);
@@ -215,7 +215,8 @@ void State_Machine::perform_regulation(std::vector<original_data> &to_be_compres
         }
     }
     else{ // 均匀量化
-        regulator_homo->compress(to_be_compressed, max_diff, compressed);
+        // regulator_homo->compress(to_be_compressed, max_diff, compressed);
+        regulator_A->compress(to_be_compressed, max_diff, compressed); // 均匀量化出了点问题，暂时先改用A律
         regulation_type = REGU_HOMO;
     }
 }

@@ -61,7 +61,8 @@ void Period::decompress(std::vector<original_data> &result, bool debug, int debu
                 regulator_u->decompress(compressed, diff_max, decompressed);
                 break;
             case REGU_HOMO:
-                regulator_homo->decompress(compressed, diff_max, decompressed);
+                // regulator_homo->decompress(compressed, diff_max, decompressed);
+                regulator_A->decompress(compressed, diff_max, decompressed); // 均匀量化出了点问题，暂时先该用A律
                 break; 
             default:
                 std::cerr << "regulation_type error, die" << std::endl;
