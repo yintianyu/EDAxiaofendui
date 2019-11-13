@@ -204,20 +204,22 @@ void State_Machine::save_period(){
 
 void State_Machine::perform_regulation(std::vector<original_data> &to_be_compressed, original_data max_diff, original_data min_diff, 
         std::vector<compressed_diff> &compressed){
-    if(max_diff - min_diff >= THRESHOLD_HOMO_INHOMO){ // 非均匀量化
-        if(small_signal_count * 2 < (int)frames.size()){ // 大信号比较多用A律
-            regulator_A->compress(to_be_compressed, max_diff, compressed);
-            regulation_type = REGU_A;
-        }
-        else{
-            regulator_u->compress(to_be_compressed, max_diff, compressed);
-            regulation_type = REGU_U;
-        }
-    }
-    else{ // 均匀量化
-        regulator_homo->compress(to_be_compressed, max_diff, compressed);
-        regulation_type = REGU_HOMO;
-    }
+    regulator_u->compress(to_be_compressed, max_diff, compressed); //为了测试效果先只使用u律
+    regulation_type = REGU_U;
+    // if(max_diff - min_diff >= THRESHOLD_HOMO_INHOMO){ // 非均匀量化
+    //     if(small_signal_count * 2 < (int)frames.size()){ // 大信号比较多用A律
+    //         regulator_A->compress(to_be_compressed, max_diff, compressed);
+    //         regulation_type = REGU_A;
+    //     }
+    //     else{
+    //         regulator_u->compress(to_be_compressed, max_diff, compressed);
+    //         regulation_type = REGU_U;
+    //     }
+    // }
+    // else{ // 均匀量化
+    //     regulator_homo->compress(to_be_compressed, max_diff, compressed);
+    //     regulation_type = REGU_HOMO;
+    // }
 }
 
 void State_Machine::write_period_to_file(const std::vector<compressed_diff> &compressed, original_data diff_max, bool predict){
@@ -259,14 +261,20 @@ void State_Machine::write_period_to_file(const std::vector<compressed_diff> &com
             output_fstream.write((char*)&c_idxes[i], sizeof(c_idxes[i])); // 记录每个被压缩的帧的编号
         }
         for(int i = 0;i < c_frames_number;++i){
-            compressed_diff_write tmp = (compressed_diff_write)(compressed[i].to_ulong());
-            output_fstream.write((char*)&tmp, sizeof(tmp)); // 存储压缩后的差值
+            uint32_t tmp = (uint32_t)(compressed[i].to_ulong());
+            compressed_diff_write1 w1 = tmp & 0xffff;
+            compressed_diff_write2 w2 = (tmp >> 16) && 0xff;
+            output_fstream.write((char*)&w1, sizeof(w1)); // 存储压缩后的差值
+            output_fstream.write((char*)&w2, sizeof(w2)); // 存储压缩后的差值
         }
     }
     else{ // 不用预测那就不需要写有多少帧被压缩了，直接上差值
         for(int i = 0;i < frame_count;++i){
-            compressed_diff_write tmp = (compressed_diff_write)(compressed[i].to_ulong());
-            output_fstream.write((char*)&tmp, sizeof(tmp)); // 存储压缩后的差值
+            uint32_t tmp = (uint32_t)(compressed[i].to_ulong());
+            compressed_diff_write1 w1 = tmp & 0xffff;
+            compressed_diff_write2 w2 = (tmp >> 16) && 0xff;
+            output_fstream.write((char*)&w1, sizeof(w1)); // 存储压缩后的差值
+            output_fstream.write((char*)&w2, sizeof(w2)); // 存储压缩后的差值
         }
     }
 

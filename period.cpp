@@ -48,8 +48,12 @@ void Period::decompress(std::vector<original_data> &result, bool debug, int debu
         std::vector<compressed_diff> compressed;
         compressed.resize(c_frames_number);
         for(int i = 0;i < c_frames_number;++i){
-            compressed_diff_write tmp;
-            input_fstream.read((char*)&tmp, sizeof(tmp)); // 压缩后的差值
+            compressed_diff_write1 w1;
+            compressed_diff_write2 w2;
+            uint32_t tmp;
+            input_fstream.read((char*)&w1, sizeof(w1)); // 压缩后的差值
+            input_fstream.read((char*)&w2, sizeof(w2)); // 压缩后的差值
+            tmp = w1 + (w2 << 16);
             compressed[i] = tmp;
         }
         std::vector<original_data> decompressed;
@@ -97,8 +101,12 @@ void Period::decompress(std::vector<original_data> &result, bool debug, int debu
         // Reserved for Boris Johnson;
         std::vector<compressed_diff> compressed(frame_count);
         for(int i = 0;i < frame_count;++i){
-            compressed_diff_write tmp;
-            input_fstream.read((char*)&tmp, sizeof(tmp)); // 压缩后的差值
+            compressed_diff_write1 w1;
+            compressed_diff_write2 w2;
+            uint32_t tmp;
+            input_fstream.read((char*)&w1, sizeof(w1)); // 压缩后的差值
+            input_fstream.read((char*)&w2, sizeof(w2)); // 压缩后的差值
+            tmp = w1 + (w2 << 16);
             compressed[i] = tmp;
         }
         std::vector<original_data> decompressed;

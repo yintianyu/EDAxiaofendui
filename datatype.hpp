@@ -36,10 +36,11 @@ typedef unsigned char regulation_type_write;
 
 //typedef char compressed_diff; // Can be modify to short if 16 bits are needed
 
-typedef std::bitset<16> compressed_diff;
+typedef std::bitset<24> compressed_diff;
 typedef std::bitset<8>  compressed_diff_8bit;
 
-typedef uint16_t compressed_diff_write; // 写入文件的类型，如果使用std::bitset<16> 则改为uint16_t
+typedef uint16_t compressed_diff_write1; // 写入文件的类型，如果使用std::bitset<16> 则改为uint16_t
+typedef uint8_t compressed_diff_write2; // 写入文件的类型，如果使用std::bitset<16> 则改为uint16_t
 
 #define X_VALUE_STEP (4) // x value压缩时每次的放大倍数
 #define X_VALUE_DEVIDE (8) // 有多少位用于存count
