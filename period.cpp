@@ -30,7 +30,7 @@ void Period::read_head(){
     }
 }
 
-void Period::decompress(std::vector<original_data> &result, bool debug){
+void Period::decompress(std::vector<original_data> &result, bool debug, int debug_signal_idx, int debug_period_count){
     read_head();
     result.resize(frame_count);
     #ifdef DEBUG
@@ -70,7 +70,7 @@ void Period::decompress(std::vector<original_data> &result, bool debug){
         #ifdef DEBUG
             if(debug){
                 for(auto i:decompressed){
-                    std::cout << "[DEBUGPERIOD] [REGULATION] " << i << std::endl;
+                    std::cout << "[DEBUGPERIOD] [REGULATION] " << i << " regulation_type=" << (int)regulation_type << std::endl;
                 }
             }
         #endif
@@ -135,7 +135,14 @@ void Period::decompress(std::vector<original_data> &result, bool debug){
             result[i] = predict_value;
         }
     }
+    #ifdef DEBUG
+    if(debug_signal_idx == DEBUG_SIGNAL){
+        for(int i = 0;i < (int)result.size();++i)
+            if(x_values[base_idx + i] > DEBUG_TIME - DEBUG_TIME_RANGE && x_values[base_idx + i] < DEBUG_TIME + DEBUG_TIME_RANGE)
+                std::cout << "[DEBUG] data=" << result[i] << " Period No." << debug_period_count << std::endl;
+    }
     std::cout << "[Decompress] Period No." << period_count << " frame number: " << (int)frame_count << std::endl;
+    #endif
     ++period_count;
 }
 

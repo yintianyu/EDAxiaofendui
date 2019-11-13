@@ -60,14 +60,11 @@ void Decompressor::decompress(const std::vector<std::string> &names){
             period->pseudo_decompress(); // 跳过这个period
         }
         else{
-            period->decompress(result, signal_idx == DEBUG_SIGNAL && debug_period_count == DEBUG_PERIOD);
+            period->decompress(result, signal_idx == DEBUG_SIGNAL && debug_period_count == DEBUG_PERIOD, signal_idx, debug_period_count);
         }
         buffer_mutex.lock();
         for(const auto &element:result){
             output_buffer[decompress_idx].push(element);
-            if(signal_idx == DEBUG_SIGNAL){
-                std::cout << "[DEBUG] data=" << element << " Period No." << debug_period_count << std::endl;
-            }
         }
         if(signal_idx == DEBUG_SIGNAL){
             debug_period_count += 1;

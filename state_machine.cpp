@@ -29,13 +29,13 @@ period_count(0){
 void State_Machine::act(original_data data, x_value time, int index, bool debug){
     assert(signal_idx >= 0);
     #ifdef DEBUG
-    if(debug && signal_idx == DEBUG_SIGNAL){
+    if(debug && signal_idx == DEBUG_SIGNAL && time > DEBUG_TIME - DEBUG_TIME_RANGE && time < DEBUG_TIME + DEBUG_TIME_RANGE){
         std::cout << "[DEBUG] data=" << data << " time=" << time << " period_count=" << period_count;
     }
     #endif
     if(state == IDLE){
         #ifdef DEBUG
-        if(debug && signal_idx == DEBUG_SIGNAL)
+        if(debug && signal_idx == DEBUG_SIGNAL && time > DEBUG_TIME - DEBUG_TIME_RANGE && time < DEBUG_TIME + DEBUG_TIME_RANGE)
             std::cout << std::endl;
         #endif
         base = data;
@@ -62,14 +62,14 @@ void State_Machine::act(original_data data, x_value time, int index, bool debug)
         frames.push_back(X_Vals_Pair(time, data));
         predict_step = time - base_time;
         #ifdef DEBUG
-        if(debug && signal_idx == DEBUG_SIGNAL)
+        if(debug && signal_idx == DEBUG_SIGNAL && time > DEBUG_TIME - DEBUG_TIME_RANGE && time < DEBUG_TIME + DEBUG_TIME_RANGE)
             std::cout << " slope=" << slope << " data=" << data << " base=" << base << " time=" << time << "base_time=" << base_time << std::endl;
         #endif
         return;
     }
     if(state == RUN){
         #ifdef DEBUG
-        if(debug && signal_idx == DEBUG_SIGNAL)
+        if(debug && signal_idx == DEBUG_SIGNAL && time > DEBUG_TIME - DEBUG_TIME_RANGE && time < DEBUG_TIME + DEBUG_TIME_RANGE)
             std::cout << std::endl;
         #endif      
         // 检查范数是否满足beta, 斜率和一开始的是不是差的太多
