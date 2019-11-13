@@ -31,6 +31,8 @@ typedef int x_value_idx;
 
 #define IDENTIFIER (0x1234)
 
+#define THRESHOLD_SAVE_DIRECTLY (5) // 如果时间片长度小于该值则直接存储
+
 typedef enum {REGU_A, REGU_U, REGU_HOMO} REGULATION_TYPE; //这个Period采用的规约手段，A律，u律还是均匀量化
 typedef unsigned char regulation_type_write;
 

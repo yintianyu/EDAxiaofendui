@@ -150,6 +150,19 @@ void State_Machine::act(original_data data, x_value time, int index, bool debug)
 
 
 void State_Machine::save_period(){
+    // 如果帧太短则直接存储
+    uint8_t frame_count = frames.size();
+    if(frame_count <= THRESHOLD_SAVE_DIRECTLY){
+        output_fstream.write((char*)&signal_idx, sizeof(signal_idx)); // 所属信号
+        uint8_t tmp = 0;
+        output_fstream.write((char*)&tmp, sizeof(tmp)); // 写一个0，表示直接存储
+        output_fstream.write((char*)&frame_count, sizeof(frame_count)); // 帧数N
+        for(auto &frame:frames){
+            original_data_write tmp = frame.value;
+            output_fstream.write((char*)&tmp, sizeof(tmp)); // 写数进去
+        }
+        return;
+    }
     bool predict = true;
     std::vector<compressed_diff> compressed;
     std::vector<original_data> to_be_compressed;
