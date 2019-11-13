@@ -13,7 +13,7 @@ void u_Regulation :: compress(const std::vector<original_data> &input_diff, orig
     unsigned int maxVal = 1 << (s-1);
     for (auto i = input_diff.begin(); i != input_diff.end(); ++i) {
         compressed_diff res;
-        original_data normDiff = abs(*i) / max;
+        original_data normDiff = fabs(*i) / max;
         if (normDiff >= 127.0 / 255) {
             res = normDiff == 1 ? (maxVal-1) : maxVal*7/8 + (normDiff - 127.0 / 255) * 255 * maxVal / 1024;
         } 

@@ -215,8 +215,7 @@ void State_Machine::perform_regulation(std::vector<original_data> &to_be_compres
         }
     }
     else{ // 均匀量化
-        // regulator_homo->compress(to_be_compressed, max_diff, compressed);
-        regulator_A->compress(to_be_compressed, max_diff, compressed); // 均匀量化出了点问题，暂时先改用A律
+        regulator_homo->compress(to_be_compressed, max_diff, compressed);
         regulation_type = REGU_HOMO;
     }
 }

@@ -9,6 +9,7 @@
 #define REGULATION_HPP
 
 #include <vector>
+#include <cmath>
 #include "datatype.hpp"
 
 
