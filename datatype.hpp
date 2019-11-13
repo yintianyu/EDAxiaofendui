@@ -20,7 +20,7 @@ typedef int x_value_idx;
 
 
 // Threshold define
-#define EPSILON (1e-4) // 调整为1e-4因为regulaiton的精度大概就是如此threshold between C and P
+#define EPSILON (1e-8) // threshold between C and P
 #define YITA ((int)(frames.size() * 3 / 4))
 #define BETA (15)
 #define ALPHA (255)

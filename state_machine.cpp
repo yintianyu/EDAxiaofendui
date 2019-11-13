@@ -73,10 +73,6 @@ void State_Machine::act(original_data data, x_value time, int index, bool debug)
         original_data slope_local;
         bool slope_ok = true; // 用于检查当前slope和base的slope差距是不是过大
         diff_sum = fabs(data - base);
-        #ifdef DEBUG
-        if(debug && signal_idx == DEBUG_SIGNAL && time > DEBUG_TIME - DEBUG_TIME_RANGE && time < DEBUG_TIME + DEBUG_TIME_RANGE)
-            std::cout << " diff=" << diff_sum << std::endl;
-        #endif 
         small_signal_count += fabs(data) < 1 ? 1 : 0;
         int last_idx = frames.size()-1;
         slope_local = (data - frames[last_idx].value) / (time - frames[last_idx].x);
@@ -114,6 +110,10 @@ void State_Machine::act(original_data data, x_value time, int index, bool debug)
         bool isPredict = true;
         original_data predict = base + slope * (time - base_time);
         original_data diff = fabs(predict - data);
+        #ifdef DEBUG
+        if(debug && signal_idx == DEBUG_SIGNAL && time > DEBUG_TIME - DEBUG_TIME_RANGE && time < DEBUG_TIME + DEBUG_TIME_RANGE)
+            std::cout << " diff=" << diff << std::endl;
+        #endif 
         if(diff / fabs(data) > THRESHOLD_DIFF_DATA_RATIO){ // diff占data比过大，重新分P
             #ifdef DEBUG
             if(signal_idx == DEBUG_SIGNAL){
