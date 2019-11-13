@@ -83,18 +83,23 @@ void Period::decompress(std::vector<original_data> &result, bool debug, int debu
         for(int i = 1;i < frame_count;++i){
             original_data predict_value;
             predict_value = slope * (x_values[base_idx + i] - base_time) + base;
-            #ifdef DEBUG
-            if(debug){
-                std::cout << "[DEBUGPERIOD] x=" << x_values[base_idx + i] << std::endl;
-            }
-            #endif
-            if(c_frames_number > 0 && i == c_idxes[c_idx_i]){
+            if(c_frames_number > 0 && c_idx_i < c_frames_number && i == c_idxes[c_idx_i]){
                 result[i] = predict_value + decompressed[c_idx_i];
                 c_idx_i++;
+                #ifdef DEBUG
+                if(debug){
+                    std::cout << "[DEBUGPERIOD] decompressed[" << c_idx_i-1 << "]=" << decompressed[c_idx_i] << " " << predict_value << "+" << decompressed[c_idx_i] << "=" << result[i] <<std::endl;
+                }
+                #endif
             }
             else{
                 result[i] = predict_value;
             }
+            #ifdef DEBUG
+            if(debug){
+                std::cout << "[DEBUGPERIOD] x=" << x_values[base_idx + i] << " slope=" << slope << " base_time=" << base_time << " base=" << base << " predict_value" << predict_value << " result[i]=" << result[i] <<std::endl;
+            }
+            #endif
         }
     }
     else{
@@ -167,15 +172,19 @@ void Period::pseudo_decompress(){
             input_fstream.read((char*)&c_idxes[i], sizeof(c_idxes[i])); // 记录每个被压缩的帧的编号
         }
         for(int i = 0;i < c_frames_number;++i){
-            compressed_diff_write tmp;
-            input_fstream.read((char*)&tmp, sizeof(tmp)); // 压缩后的差值
+            compressed_diff_write1 w1;
+            compressed_diff_write2 w2;
+            input_fstream.read((char*)&w1, sizeof(w1)); // 压缩后的差值
+            input_fstream.read((char*)&w2, sizeof(w2)); // 压缩后的差值
         }
     }
     else{
         // Reserved for Boris Johnson;
         for(int i = 0;i < frame_count;++i){
-            compressed_diff_write tmp;
-            input_fstream.read((char*)&tmp, sizeof(tmp)); // 压缩后的差值
+            compressed_diff_write1 w1;
+            compressed_diff_write2 w2;
+            input_fstream.read((char*)&w1, sizeof(w1)); // 压缩后的差值
+            input_fstream.read((char*)&w2, sizeof(w2)); // 压缩后的差值
         }
     }
     ++period_count;

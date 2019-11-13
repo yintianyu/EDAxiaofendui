@@ -25,7 +25,7 @@ typedef int x_value_idx;
 #define BETA (15)
 #define ALPHA (255)
 
-#define THRESHOLD_DIFF_DATA_RATIO (1e-2) // 如果diff和data的比值超过该值，则重新分P
+#define THRESHOLD_DIFF_DATA_RATIO (1) // 如果diff和data的比值超过该值，则重新分P
 
 #define THRESHOLD_HOMO_INHOMO (1e-4) // 差值的最大值最小值之差的阈值，决定采用均匀量化还是非均匀量化
 
@@ -52,9 +52,9 @@ typedef uint8_t compressed_diff_write2; // 写入文件的类型，如果使用s
 #define SLOPE_ZERO (100) // 斜率绝对值为0的阈值
 
 
-#define DEBUG_PERIOD (129) // 用于debug的打印周期
-#define DEBUG_SIGNAL (1) // 用于debug的信号
+#define DEBUG_PERIOD (153) // 用于debug的打印周期
+#define DEBUG_SIGNAL (6) // 用于debug的信号
 
-#define DEBUG_TIME (1.953487817764674e-08) // 用于debug的时间
+#define DEBUG_TIME (3.088627783724307e-08) // 用于debug的时间
 #define DEBUG_TIME_RANGE (1e-8) // 用于debug的时间范围
 #endif
