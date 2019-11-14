@@ -14,7 +14,7 @@ typedef double original_data;
 typedef double x_value;
 typedef unsigned char index_value;
 typedef float compressed_x;
-typedef double original_data_write;
+typedef float original_data_write;
 
 typedef int x_value_idx;
 
