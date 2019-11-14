@@ -33,6 +33,8 @@ typedef int x_value_idx;
 
 #define THRESHOLD_SAVE_DIRECTLY (5) // 如果时间片长度小于该值则直接存储
 
+#define REGULATION_REDUNDANCY (1.001) // regulation最大值的冗余
+
 typedef enum {REGU_A, REGU_U, REGU_HOMO} REGULATION_TYPE; //这个Period采用的规约手段，A律，u律还是均匀量化
 typedef unsigned char regulation_type_write;
 
@@ -54,9 +56,9 @@ typedef uint8_t compressed_diff_write2; // 写入文件的类型，如果使用s
 #define SLOPE_ZERO (100) // 斜率绝对值为0的阈值
 
 
-#define DEBUG_PERIOD (153) // 用于debug的打印周期
+#define DEBUG_PERIOD (675340) // 用于debug的打印周期
 #define DEBUG_SIGNAL (6) // 用于debug的信号
 
-#define DEBUG_TIME (3.088627783724307e-08) // 用于debug的时间
-#define DEBUG_TIME_RANGE (1e-8) // 用于debug的时间范围
+#define DEBUG_TIME (3.313445020334608e+04) // 用于debug的时间
+#define DEBUG_TIME_RANGE (1) // 用于debug的时间范围
 #endif

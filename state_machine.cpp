@@ -161,7 +161,7 @@ void State_Machine::save_period(){
             original_data_write tmp = frame.value;
             output_fstream.write((char*)&tmp, sizeof(tmp)); // 写数进去
         }
-        period_count += 1
+        period_count += 1;
         return;
     }
     bool predict = true;
@@ -177,7 +177,7 @@ void State_Machine::save_period(){
         compressed.reserve(frames.size());
         to_be_compressed.reserve(frames.size());
         diff_max = 0;
-        diff_min = 10000000;
+        diff_min = 1000000000000000000000.0;
         predict = false;
         for(const auto &frame : frames){
             original_data diff = frame.value - (base + slope * (frame.x - base_time));
@@ -194,7 +194,7 @@ void State_Machine::save_period(){
         compressed.reserve(c_frames.size());
         to_be_compressed.reserve(c_frames.size());
         diff_max = 0;
-        diff_min = 10000000;
+        diff_min = 1000000000000000000000.0;
         predict = true;
         for(const auto &frame : c_frames){
             original_data diff = frame.value - (base + slope * (frame.x - base_time));
@@ -207,14 +207,15 @@ void State_Machine::save_period(){
             to_be_compressed.push_back(diff);
         }
     }
+    diff_max = diff_max * REGULATION_REDUNDANCY;
+    perform_regulation(to_be_compressed, diff_max, diff_min, compressed);
 #ifdef DEBUG
     if(signal_idx == DEBUG_SIGNAL && period_count == DEBUG_PERIOD){
-        for(auto i:to_be_compressed){
-            std::cout << "[DEBUGPERIOD] [REGULATION] " << i << std::endl;
+        for(int i = 0;i < (int)to_be_compressed.size();++i){
+            std::cout << "[DEBUGPERIOD] [REGULATION] " << to_be_compressed[i] << " " << compressed[i].to_ulong() << std::endl;
         }
     }
 #endif
-    perform_regulation(to_be_compressed, diff_max, diff_min, compressed);
     write_period_to_file(compressed, diff_max, predict);
     period_count += 1;
 }
@@ -223,8 +224,8 @@ void State_Machine::perform_regulation(std::vector<original_data> &to_be_compres
         std::vector<compressed_diff> &compressed){
     if(max_diff - min_diff >= THRESHOLD_HOMO_INHOMO){ // 非均匀量化
         if(small_signal_count * 2 < (int)frames.size()){ // 大信号比较多用A律
-            regulator_A->compress(to_be_compressed, max_diff, compressed);
-            regulation_type = REGU_A;
+            regulator_u->compress(to_be_compressed, max_diff, compressed);
+            regulation_type = REGU_U;
         }
         else{
             regulator_u->compress(to_be_compressed, max_diff, compressed);

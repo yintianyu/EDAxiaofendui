@@ -91,8 +91,8 @@ void Period::decompress(std::vector<original_data> &result, bool debug, int debu
         }
         #ifdef DEBUG
             if(debug){
-                for(auto i:decompressed){
-                    std::cout << "[DEBUGPERIOD] [REGULATION] " << i << " regulation_type=" << (int)regulation_type << std::endl;
+                for(int i = 0;i < (int)decompressed.size();++i){
+                    std::cout << "[DEBUGPERIOD] [REGULATION] " << decompressed[i] << " regulation_type=" << (int)regulation_type << " " << compressed[i].to_ulong() << std::endl;
                 }
             }
         #endif
@@ -149,8 +149,8 @@ void Period::decompress(std::vector<original_data> &result, bool debug, int debu
         }
         #ifdef DEBUG
             if(debug){
-                for(auto i:decompressed){
-                    std::cout << "[DEBUGPERIOD] [REGULATION] " << i << std::endl;
+                for(int i = 0;i < (int)decompressed[i];++i){
+                    std::cout << "[DEBUGPERIOD] [REGULATION] " << decompressed[i] << " regulation_type=" << (int)regulation_type << " " << compressed[i].to_ulong() << std::endl;
                 }
             }
         #endif
