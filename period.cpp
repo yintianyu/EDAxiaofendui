@@ -39,6 +39,14 @@ void Period::decompress(std::vector<original_data> &result, bool debug, int debu
             input_fstream.read((char*)&tmp, sizeof(tmp));
             result[i] = tmp;
         }
+        #ifdef DEBUG
+        if(debug_signal_idx == DEBUG_SIGNAL){
+            for(int i = 0;i < (int)result.size();++i)
+                if(x_values[base_idx + i] > DEBUG_TIME - DEBUG_TIME_RANGE && x_values[base_idx + i] < DEBUG_TIME + DEBUG_TIME_RANGE)
+                    std::cout << "[DEBUG] data=" << result[i] << " Period No." << debug_period_count << std::endl;
+        }
+        std::cout << "[Decompress] Period No." << period_count << " frame number: " << (int)frame_count << std::endl;
+        #endif
         return;
     }   
     read_head();

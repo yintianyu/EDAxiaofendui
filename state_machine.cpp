@@ -161,6 +161,7 @@ void State_Machine::save_period(){
             original_data_write tmp = frame.value;
             output_fstream.write((char*)&tmp, sizeof(tmp)); // 写数进去
         }
+        period_count += 1
         return;
     }
     bool predict = true;
