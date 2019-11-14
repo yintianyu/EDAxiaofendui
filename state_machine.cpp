@@ -224,8 +224,8 @@ void State_Machine::perform_regulation(std::vector<original_data> &to_be_compres
         std::vector<compressed_diff> &compressed){
     if(max_diff - min_diff >= THRESHOLD_HOMO_INHOMO){ // 非均匀量化
         if(small_signal_count * 2 < (int)frames.size()){ // 大信号比较多用A律
-            regulator_u->compress(to_be_compressed, max_diff, compressed);
-            regulation_type = REGU_U;
+            regulator_A->compress(to_be_compressed, max_diff, compressed);
+            regulation_type = REGU_A;
         }
         else{
             regulator_u->compress(to_be_compressed, max_diff, compressed);
