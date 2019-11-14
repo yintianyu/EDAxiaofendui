@@ -12,3 +12,4 @@ core.*
 *.deedaxfd
 *.txt
 cases/*
+*.tar.gz

@@ -86,7 +86,7 @@ void State_Machine::act(original_data data, x_value time, int index, bool debug)
             frames.pop_back();
             save_period();
             reset();
-            act(last_data, x, index, false);
+            act(last_data, x, index-1, false);
             act(data, time, index, false);
             return;
         }
@@ -168,7 +168,10 @@ void State_Machine::save_period(){
     std::vector<original_data> to_be_compressed;
     original_data diff_max;
     original_data diff_min;
+    #ifdef DEBUG
     std::cout << "[save_period] signal_idx: " << signal_idx << " period No." << period_count << " frame length: " << frames.size() << std::endl;
+    #endif
+    // std::cout << "signal_idx="<< signal_idx <<" base_idx=" << base_idx << " length=" << frames.size() << std::endl;
     if(c_count > YITA){ // 全部都压缩存储
         compressed.reserve(frames.size());
         to_be_compressed.reserve(frames.size());
