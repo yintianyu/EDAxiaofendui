@@ -30,7 +30,7 @@ void Homo_Regulation :: decompress(const std::vector<compressed_diff> &input_dif
         j[s-1] = 0;
         auto num = j.to_ulong();
         double sig = (*i)[s-1] == 1 ? -1 : 1; 
-        res = (original_data) num * max / maxVal;
+        res = (original_data) (num + 0.5) * max / maxVal;
         res = res * sig;
         output_original_data.push_back(res);
     }

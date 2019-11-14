@@ -9,7 +9,6 @@
 #define U_REGULATION_HPP
 
 #include "Regulation.hpp"
-#include <math.h>
 
 class u_Regulation : public Regulation{
     public:
