@@ -25,6 +25,8 @@ void Homo_Regulation :: decompress(const std::vector<compressed_diff> &input_dif
     char s = t.size();
     unsigned int maxVal = 1 << (s-1);
     original_data res;
+    output_original_data.resize(input_diff.size());
+    int idx = 0;
     for (auto i = input_diff.begin(); i != input_diff.end(); ++i) {
         auto j = (*i);
         j[s-1] = 0;
@@ -32,6 +34,6 @@ void Homo_Regulation :: decompress(const std::vector<compressed_diff> &input_dif
         double sig = (*i)[s-1] == 1 ? -1 : 1; 
         res = (original_data) (num + 0.5) * max / maxVal;
         res = res * sig;
-        output_original_data.push_back(res);
+        output_original_data[idx++] = res;
     }
 }

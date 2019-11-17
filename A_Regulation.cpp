@@ -69,7 +69,8 @@ void A_Regulation::decompress(const std::vector<compressed_diff> &input_diff, or
 
 	original_data odata;
 	compressed_diff bitCode;
-	output_original_data.clear();
+	output_original_data.resize(input_diff.size());
+    int idx = 0;
 	std::vector<compressed_diff>::const_iterator it_in;
 	for(it_in=input_diff.begin(); it_in !=input_diff.end(); it_in++){
 		bitCode = *it_in;
@@ -103,7 +104,7 @@ void A_Regulation::decompress(const std::vector<compressed_diff> &input_diff, or
 		if(  (*it_in )[s-1] == 1   ) {
 			odata= -odata;
 		}
-		output_original_data.push_back(odata);
+		output_original_data[idx++] = odata;
 	}
 }
 

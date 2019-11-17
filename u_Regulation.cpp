@@ -47,6 +47,8 @@ void u_Regulation :: decompress(const std::vector<compressed_diff> &input_diff, 
     compressed_diff t;
     char s = t.size();
     unsigned int maxVal = 1 << (s-1);
+    output_original_data.resize(input_diff.size());
+    int idx = 0;
     original_data res;
     for (auto i = input_diff.begin(); i != input_diff.end(); ++i) {
         auto j = (*i);
@@ -78,7 +80,7 @@ void u_Regulation :: decompress(const std::vector<compressed_diff> &input_diff, 
             res = max * (original_data) (num + 0.5) * 8 / (255*maxVal);
         }
         res = res * sig;
-        output_original_data.push_back(res);
+        output_original_data[idx++] = res;
     }
 }
 
