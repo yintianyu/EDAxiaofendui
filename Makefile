@@ -13,6 +13,9 @@ all : $(TARGETS)
 compress:$(OBJS) $(COMPOBJS)
 	$(CC) -o $@ $^ $(LDFLAGS)
 
+decompress:$(OBJS) $(DECOMPOBJS)
+	$(CC) -o $@ $^ $(LDFLAGS)
+
 %.o:%.c
 	$(CC) -o $@ -c $< $(CPPFLAGS) $(INCLUDEFLAGS)
 
