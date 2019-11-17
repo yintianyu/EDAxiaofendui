@@ -2,13 +2,15 @@ CC      = g++
 CPPFLAGS  = -Wall -O0 -g
 INCLUDEFLAGS = 
 LDFLAGS = -L lib -l ssdboutputter -l ssdbreader -lpthread -g
-OBJS    = main.o compressor.o A_Regulation.o Homo_Regulation.o state_machine.o u_Regulation.o decompressor.o period.o
-TARGETS = edaxiaofendui 
+OBJS    = compressor.o A_Regulation.o Homo_Regulation.o state_machine.o u_Regulation.o decompressor.o period.o
+COMPOBJS = compress_main.o
+DECOMPOBJS = decompress_main.o
+TARGETS = compress decompress 
 
 .PHONY:all 
 all : $(TARGETS)
 
-edaxiaofendui:$(OBJS)
+compress:$(OBJS) $(COMPOBJS)
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 %.o:%.c
