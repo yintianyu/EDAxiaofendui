@@ -28,6 +28,9 @@ int main(int argc, char *argv[]){
     char buffer[80];
     while(!signal_fstream.eof()){
         signal_fstream.getline(buffer, 80);
+        if(strlen(buffer) == 0){
+            continue;
+        }
         signal_names.push_back(buffer);
     }
     Decompressor *decompressor = new Decompressor(argv[1], argv[2]);

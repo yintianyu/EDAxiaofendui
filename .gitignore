@@ -13,3 +13,7 @@ core.*
 *.txt
 cases/*
 *.tar.gz
+compress
+decompress
+*.analysis
+*.out

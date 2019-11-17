@@ -190,6 +190,7 @@ void Period::pseudo_decompress(){
         }
         return;
     }  
+    read_head();
     if(predict){
         uint16_t c_frames_number;
         input_fstream.read((char*)&c_frames_number, sizeof(c_frames_number));
