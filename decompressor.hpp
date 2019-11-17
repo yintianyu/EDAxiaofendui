@@ -32,6 +32,8 @@ class Decompressor{
     std::vector<std::string> signal_names;
     std::vector<int> decompress_idxes;
     int frame_count;
+    void _ready(int write_number, int &current_frame);
+    void _check(bool &ready, int &write_number);
     std::vector<std::queue<original_data>> output_buffer; // 缓存即将输出到文件中的内容
 
     std::mutex buffer_mutex; // 用来管理output_buffer的锁

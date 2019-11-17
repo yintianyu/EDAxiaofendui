@@ -47,7 +47,6 @@ void Decompressor::decompress(const std::vector<std::string> &names){
     }
     outputter.OutputHead(Period::x_values[0], Period::x_values[frame_count-1], names);
     Period *period = new Period(input_fstream);
-    std::thread write_th(&Decompressor::write_data_to_file, this);
     std::vector<original_data> result;
     int debug_period_count = 0;
     while(input_fstream.peek() != EOF){
@@ -62,16 +61,16 @@ void Decompressor::decompress(const std::vector<std::string> &names){
         else{
             period->decompress(result, signal_idx == DEBUG_SIGNAL && debug_period_count == DEBUG_PERIOD, signal_idx, debug_period_count);
         }
-        buffer_mutex.lock();
         for(const auto &element:result){
             output_buffer[decompress_idx].push(element);
         }
         if(signal_idx == DEBUG_SIGNAL){
             debug_period_count += 1;
         }
-        buffer_mutex.unlock();
+        write_data_to_file();
     }
-    write_th.join(); // 等待write函数执行完毕
+    write_data_to_file();
+    outputter.FinishOutput();
 
     delete period;
 }
@@ -101,11 +100,19 @@ int Decompressor::read_metadata (){
 }
 
 void Decompressor::write_data_to_file(){
-    int current_frame = 0;
-    while(current_frame < frame_count){
+    static int current_frame = 0;
+    if(current_frame < frame_count){
         bool ready = true;
         int write_number = 2147483647;
-        buffer_mutex.lock();
+        _check(ready, write_number);
+        if(ready){
+            _ready(write_number, current_frame);
+        }
+    }
+    return;
+}
+
+void Decompressor::_check(bool &ready, int &write_number){
         for(const auto &list_per_signal:output_buffer){
             if(list_per_signal.size() == 0){
                 ready = false;
@@ -115,24 +122,16 @@ void Decompressor::write_data_to_file(){
                 write_number = list_per_signal.size() < (uint32_t)write_number ? list_per_signal.size() : write_number;
             }
         }
-        if(ready){
-            for(int i = 0;i < write_number;++i){
-                outputter.OutputXValue(Period::x_values[current_frame]);
-                for(auto &list_per_signal:output_buffer){
-                    outputter.OutputSignalValue(list_per_signal.front());
-                    list_per_signal.pop();
-                }
-                outputter.FinishOnePointData();
-                current_frame += 1;
-            }
-            buffer_mutex.unlock();
+}
+
+void Decompressor::_ready(int write_number, int &current_frame){
+    for(int i = 0;i < write_number;++i){
+        outputter.OutputXValue(Period::x_values[current_frame]);
+        for(auto &list_per_signal:output_buffer){
+            outputter.OutputSignalValue(list_per_signal.front());
+            list_per_signal.pop();
         }
-        else{
-            // TODO: yield
-            buffer_mutex.unlock();
-            std::this_thread::yield();
-        }
+        outputter.FinishOnePointData();
+        current_frame += 1;
     }
-    outputter.FinishOutput();
-    return;
 }
