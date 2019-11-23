@@ -14,52 +14,64 @@ Regulation* State_Machine::regulator_homo = new Homo_Regulation();
 
 void Compressor::compress(){
     reader.Read();
-    reader_x.Read();
     signal_count = reader.GetSignalCount();
     signal_names.clear();
     signal_names.reserve(signal_count);
     for(int i = 0;i < signal_count;++i){
         signal_names.push_back(reader.GetSignalName(i));
     }
-    x_values = new std::vector<x_value>();
-    while(!reader_x.IsDataFinished()){
-        reader_x.ReadNextPointData();
-        x_values->push_back(reader_x.GetNextXValue());
-    }
-    write_metadata_to_file();
-    delete x_values;
     state_machines = new std::vector<State_Machine>(signal_count, output_fstream);
     for(int i = 0;i < signal_count;++i){
         (*state_machines)[i].set_signal_idx(i);
     }
-
     int index = 0;
+    x_values = new std::vector<x_value>();
     while(!reader.IsDataFinished()){
         reader.ReadNextPointData();
         x_value xValue = reader.GetNextXValue();
+        x_values->push_back(xValue);
         for(int i = 0;i < signal_count;++i){
             (*state_machines)[i].act(reader.GetNextSignalValue(i), xValue, index);
         }
         index++;
     }
+    // 写metadata, 合并两个文件
     delete state_machines;
+    output_fstream.close();
+    write_metadata_to_file();
+    std::ifstream tmp_input_fstream(output_filename+".tmp", std::ios::binary);
+    char *buffer = new char[16 * 1024 * 1024]; // 16MB buffer
+    std::streampos pos = tmp_input_fstream.tellg();
+    tmp_input_fstream.seekg(0, std::ios::end);
+    int length = tmp_input_fstream.tellg();
+    tmp_input_fstream.seekg(pos);
+    std::cout << "length=" << length << std::endl;
+    while(length > 0){
+        int readlength = length > 16 * 1024 * 1024 ? 16 * 1024 * 1024 : length;
+        tmp_input_fstream.read(buffer, readlength);
+        length -= readlength;
+        final_output_fstream.write(buffer, readlength);
+    }
+    delete[] buffer;
+    tmp_input_fstream.close();
+    delete x_values;
     delete State_Machine::regulator_A;
     delete State_Machine::regulator_u;
     delete State_Machine::regulator_homo;
 }
 
 void Compressor::write_metadata_to_file (){
-    assert(output_fstream);
-    output_fstream.write((char*)&identifier, sizeof(identifier)); // 写标识符，压缩文件必须以identifier开头，否则解压缩程序会抛弃
-    output_fstream.write((char*)&signal_count, sizeof(signal_count)); // 信号数量
+    assert(final_output_fstream);
+    final_output_fstream.write((char*)&identifier, sizeof(identifier)); // 写标识符，压缩文件必须以identifier开头，否则解压缩程序会抛弃
+    final_output_fstream.write((char*)&signal_count, sizeof(signal_count)); // 信号数量
     for(const auto &name : signal_names){
-        output_fstream << name; // 写入信号名称
-        output_fstream << '\n';
+        final_output_fstream << name; // 写入信号名称
+        final_output_fstream << '\n';
     }
     int frame_number = x_values->size(); // 帧数量
-    output_fstream.write((char*)&frame_number, sizeof(frame_number));
+    final_output_fstream.write((char*)&frame_number, sizeof(frame_number));
     for(int i = 0;i < frame_number;++i){
-        output_fstream.write((char*)&(*x_values)[i], sizeof((*x_values)[i])); // 每一帧的时间
+        final_output_fstream.write((char*)&(*x_values)[i], sizeof((*x_values)[i])); // 每一帧的时间
     }
 }
 

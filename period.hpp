@@ -48,6 +48,7 @@ class Period{
     original_data diff_max;
 
     void read_head();
+    void perform_deregulation(const std::vector<compressed_diff> &compressed, original_data diff_max, std::vector<original_data> &decompressed);
     static Regulation *regulator_A;
     static Regulation *regulator_u;
     static Regulation *regulator_homo;

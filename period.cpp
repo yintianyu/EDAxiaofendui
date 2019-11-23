@@ -1,5 +1,6 @@
 #include "period.hpp"
 #include <iostream>
+#include <thread>
 
 x_value *Period::x_values = nullptr;
 
@@ -75,20 +76,7 @@ void Period::decompress(std::vector<original_data> &result, bool debug, int debu
             compressed[i] = tmp;
         }
         std::vector<original_data> decompressed;
-        switch(regulation_type){
-            case REGU_A:
-                regulator_A->decompress(compressed, diff_max, decompressed);
-                break;
-            case REGU_U:
-                regulator_u->decompress(compressed, diff_max, decompressed);
-                break;
-            case REGU_HOMO:
-                regulator_homo->decompress(compressed, diff_max, decompressed);
-                break; 
-            default:
-                std::cerr << "regulation_type error, die" << std::endl;
-                exit(1);
-        }
+        std::thread th1(&Period::perform_deregulation, this, std::cref(compressed), diff_max, std::ref(decompressed));
         #ifdef DEBUG
             if(debug){
                 for(int i = 0;i < (int)decompressed.size();++i){
@@ -97,27 +85,19 @@ void Period::decompress(std::vector<original_data> &result, bool debug, int debu
             }
         #endif
         result[0] = base;
-        int c_idx_i = 0; // 用以记录现在c_idx到哪了
         for(int i = 1;i < frame_count;++i){
-            original_data predict_value;
-            predict_value = slope * (x_values[base_idx + i] - base_time) + base;
-            if(c_frames_number > 0 && c_idx_i < c_frames_number && i == c_idxes[c_idx_i]){
-                result[i] = predict_value + decompressed[c_idx_i];
-                c_idx_i++;
-                #ifdef DEBUG
-                if(debug){
-                    std::cout << "[DEBUGPERIOD] decompressed[" << c_idx_i-1 << "]=" << decompressed[c_idx_i] << " " << predict_value << "+" << decompressed[c_idx_i] << "=" << result[i] <<std::endl;
-                }
-                #endif
-            }
-            else{
-                result[i] = predict_value;
-            }
+            result[i] = slope * (x_values[base_idx + i] - base_time) + base;// + decompressed[i];
             #ifdef DEBUG
             if(debug){
-                std::cout << "[DEBUGPERIOD] x=" << x_values[base_idx + i] << " slope=" << slope << " base_time=" << base_time << " base=" << base << " predict_value" << predict_value << " result[i]=" << result[i] <<std::endl;
+                std::cout << "[DEBUGPERIOD] x=" << x_values[base_idx + i] << " decompressed=" << decompressed[i] << std::endl;
             }
             #endif
+        }
+        th1.join();
+        assert(c_idxes.size() == decompressed.size());
+        int i = 0;
+        for(auto &c_idx:c_idxes){
+            result[c_idx] += decompressed[i++];
         }
     }
     else{
@@ -133,20 +113,7 @@ void Period::decompress(std::vector<original_data> &result, bool debug, int debu
             compressed[i] = tmp;
         }
         std::vector<original_data> decompressed;
-        switch(regulation_type){
-            case REGU_A:
-                regulator_A->decompress(compressed, diff_max, decompressed);
-                break;
-            case REGU_U:
-                regulator_u->decompress(compressed, diff_max, decompressed);
-                break;
-            case REGU_HOMO:
-                regulator_homo->decompress(compressed, diff_max, decompressed);
-                break; 
-            default:
-                std::cerr << "egulation_type error, die" << std::endl;
-                exit(1);                   
-        }
+        std::thread th1(&Period::perform_deregulation, this, std::cref(compressed), diff_max, std::ref(decompressed));
         #ifdef DEBUG
             if(debug){
                 for(int i = 0;i < (int)decompressed[i];++i){
@@ -156,14 +123,16 @@ void Period::decompress(std::vector<original_data> &result, bool debug, int debu
         #endif
         result[0] = base;
         for(int i = 1;i < frame_count;++i){
-            original_data predict_value;
-            predict_value = slope * (x_values[base_idx + i] - base_time) + base + decompressed[i];
+            result[i] = slope * (x_values[base_idx + i] - base_time) + base;// + decompressed[i];
             #ifdef DEBUG
             if(debug){
                 std::cout << "[DEBUGPERIOD] x=" << x_values[base_idx + i] << " decompressed=" << decompressed[i] << std::endl;
             }
             #endif
-            result[i] = predict_value;
+        }
+        th1.join();
+        for(int i = 1;i < frame_count;++i){
+            result[i] += decompressed[i];
         }
     }
     #ifdef DEBUG
@@ -215,4 +184,21 @@ void Period::pseudo_decompress(){
         input_fstream.seekg(frame_count * 3, std::ios_base::cur);
     }
     ++period_count;
+}
+
+void Period::perform_deregulation(const std::vector<compressed_diff> &compressed, original_data diff_max, std::vector<original_data> &decompressed){
+    switch(regulation_type){
+        case REGU_A:
+            regulator_A->decompress(compressed, diff_max, decompressed);
+            break;
+        case REGU_U:
+            regulator_u->decompress(compressed, diff_max, decompressed);
+            break;
+        case REGU_HOMO:
+            regulator_homo->decompress(compressed, diff_max, decompressed);
+            break; 
+        default:
+            std::cerr << "egulation_type error, die" << std::endl;
+            exit(1);                   
+    }
 }
