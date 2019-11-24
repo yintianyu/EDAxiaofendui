@@ -42,6 +42,7 @@ class Period{
     std::vector<uint8_t> c_idxes;
 
     uint8_t predict;
+    uint8_t *buffer;
 
     x_value end_time; // 最后一帧的时间
 
@@ -61,6 +62,7 @@ class Period{
         // regulator_A = new A_Regulation();
         // regulator_u = new u_Regulation();
         // regulator_homo = new Homo_Regulation();
+        buffer = new uint8_t[256 * 3];
         period_count = 0;
     }
     void decompress(std::vector<original_data> &result, bool debug, int debug_signal_idx, int debug_period_count);
@@ -69,6 +71,7 @@ class Period{
         // delete regulator_A;
         // delete regulator_u;
         // delete regulator_homo;
+        delete[] buffer;
     }
     int period_count;
     static x_value *x_values; // x_values数组

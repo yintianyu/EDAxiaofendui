@@ -93,9 +93,10 @@ int Decompressor::read_metadata (){
     input_fstream.read((char*)&tmp, sizeof(char));
     input_fstream.read((char*)&frame_count, sizeof(frame_count));
     Period::x_values = new x_value[frame_count];
-    for(int i = 0;i < frame_count;++i){
-        input_fstream.read((char*)&Period::x_values[i], sizeof(Period::x_values[i]));
-    }
+    input_fstream.read((char*)Period::x_values, frame_count * sizeof(x_value));
+    // for(int i = 0;i < frame_count;++i){
+    //     input_fstream.read((char*)&Period::x_values[i], sizeof(Period::x_values[i]));
+    // }
     return 0;
 }
 

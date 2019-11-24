@@ -1,6 +1,7 @@
 #include "period.hpp"
 #include <iostream>
 #include <thread>
+#include <ctime>
 
 x_value *Period::x_values = nullptr;
 
@@ -35,10 +36,10 @@ void Period::decompress(std::vector<original_data> &result, bool debug, int debu
     if(frame_count == 0){ // 直接存储
         input_fstream.read((char*)&frame_count, sizeof(frame_count)); // 帧数
         result.resize(frame_count);
+        original_data_write *tmp = new original_data_write[frame_count];
+        input_fstream.read((char*)tmp, frame_count * sizeof(original_data_write));
         for(int i = 0;i < frame_count;++i){
-            original_data_write tmp;
-            input_fstream.read((char*)&tmp, sizeof(tmp));
-            result[i] = tmp;
+            result[i] = tmp[i];
         }
         #ifdef DEBUG
         if(debug_signal_idx == DEBUG_SIGNAL){
@@ -48,6 +49,7 @@ void Period::decompress(std::vector<original_data> &result, bool debug, int debu
         }
         std::cout << "[Decompress] Period No." << period_count << " frame number: " << (int)frame_count << std::endl;
         #endif
+        delete[] tmp;
         return;
     }   
     read_head();
@@ -61,22 +63,28 @@ void Period::decompress(std::vector<original_data> &result, bool debug, int debu
         uint16_t c_frames_number;
         input_fstream.read((char*)&c_frames_number, sizeof(c_frames_number));
         c_idxes.resize(c_frames_number);
+        input_fstream.read((char*)buffer, sizeof(uint8_t) * c_frames_number);
         for(int i = 0;i < c_frames_number;++i){
-            input_fstream.read((char*)&c_idxes[i], sizeof(c_idxes[i])); // 记录每个被压缩的帧的编号
+            // input_fstream.read((char*)&c_idxes[i], sizeof(c_idxes[i])); // 记录每个被压缩的帧的编号
+            c_idxes[i] = buffer[i];
         }
         std::vector<compressed_diff> compressed;
         compressed.resize(c_frames_number);
+        input_fstream.read((char*)buffer, sizeof(uint8_t) * c_frames_number * 3);
         for(int i = 0;i < c_frames_number;++i){
             compressed_diff_write1 w1;
             compressed_diff_write2 w2;
             uint32_t tmp;
-            input_fstream.read((char*)&w1, sizeof(w1)); // 压缩后的差值
-            input_fstream.read((char*)&w2, sizeof(w2)); // 压缩后的差值
+            // input_fstream.read((char*)&w1, sizeof(w1)); // 压缩后的差值
+            // input_fstream.read((char*)&w2, sizeof(w2)); // 压缩后的差值
+            w1 = *(compressed_diff_write1*)&buffer[i * 3];
+            w2 = buffer[i * 3 + 2];
             tmp = w1 + (w2 << 16);
             compressed[i] = tmp;
         }
         std::vector<original_data> decompressed;
-        std::thread th1(&Period::perform_deregulation, this, std::cref(compressed), diff_max, std::ref(decompressed));
+        // std::thread th1(&Period::perform_deregulation, this, std::cref(compressed), diff_max, std::ref(decompressed));
+        perform_deregulation(compressed, diff_max, decompressed);
         #ifdef DEBUG
             if(debug){
                 for(int i = 0;i < (int)decompressed.size();++i){
@@ -93,7 +101,7 @@ void Period::decompress(std::vector<original_data> &result, bool debug, int debu
             }
             #endif
         }
-        th1.join();
+        // th1.join();
         assert(c_idxes.size() == decompressed.size());
         int i = 0;
         for(auto &c_idx:c_idxes){
@@ -103,12 +111,13 @@ void Period::decompress(std::vector<original_data> &result, bool debug, int debu
     else{
         // Reserved for Boris Johnson;
         std::vector<compressed_diff> compressed(frame_count);
+        input_fstream.read((char*)buffer, sizeof(uint8_t) * frame_count * 3);
         for(int i = 0;i < frame_count;++i){
             compressed_diff_write1 w1;
             compressed_diff_write2 w2;
             uint32_t tmp;
-            input_fstream.read((char*)&w1, sizeof(w1)); // 压缩后的差值
-            input_fstream.read((char*)&w2, sizeof(w2)); // 压缩后的差值
+            w1 = *(compressed_diff_write1*)&buffer[i * 3];
+            w2 = buffer[i * 3 + 2];
             tmp = w1 + (w2 << 16);
             compressed[i] = tmp;
         }
