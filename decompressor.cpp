@@ -9,6 +9,7 @@
 #include "period.hpp"
 #include <iostream>
 #include <thread>
+#include <algorithm>
 
 Regulation* Period::regulator_A = new A_Regulation();
 Regulation* Period::regulator_u = new u_Regulation();
@@ -39,13 +40,19 @@ void Decompressor::decompress(const std::vector<std::string> &names){
         }
     }
 
+    std::sort(decompress_idxes.begin(), decompress_idxes.end()); // 解决了信号名乱序的情况下输出对不上的问题
+    std::vector<std::string> tmp;
+    for(auto i : decompress_idxes){
+        tmp.push_back(signal_names[i]);
+    }
+
     int decompress_signal_count = names.size();
     output_buffer.resize(decompress_signal_count); // 缓存即将输出到文件中的内容
     std::vector<int> decompress_idxes_reverse(signal_count, -1); // 用于反查待解压缩信号的编号
     for(int i = 0;i < decompress_signal_count;++i){
         decompress_idxes_reverse[decompress_idxes[i]] = i;
     }
-    outputter.OutputHead(Period::x_values[0], Period::x_values[frame_count-1], names);
+    outputter.OutputHead(Period::x_values[0], Period::x_values[frame_count-1], tmp);
     Period *period = new Period(input_fstream);
     std::vector<original_data> result;
     int debug_period_count = 0;
@@ -128,10 +135,15 @@ void Decompressor::_check(bool &ready, int &write_number){
 void Decompressor::_ready(int write_number, int &current_frame){
     for(int i = 0;i < write_number;++i){
         outputter.OutputXValue(Period::x_values[current_frame]);
+        std::cout << "[WRITE] time=" << Period::x_values[current_frame];
         for(auto &list_per_signal:output_buffer){
+            #ifdef DEBUG
+            std::cout << " " << list_per_signal.front();
+            #endif
             outputter.OutputSignalValue(list_per_signal.front());
             list_per_signal.pop();
         }
+        std::cout << std::endl;
         outputter.FinishOnePointData();
         current_frame += 1;
     }

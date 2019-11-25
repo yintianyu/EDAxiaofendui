@@ -105,6 +105,9 @@ void Period::decompress(std::vector<original_data> &result, bool debug, int debu
         assert(c_idxes.size() == decompressed.size());
         int i = 0;
         for(auto &c_idx:c_idxes){
+            if(c_idx >= frame_count){ // 加补丁
+                continue;
+            }
             result[c_idx] += decompressed[i++];
         }
     }
