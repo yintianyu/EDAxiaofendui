@@ -1,7 +1,7 @@
 CC      = g++ 
-CPPFLAGS  = -Wall -O0 -g
+CPPFLAGS  = -Wall -O3 -g
 INCLUDEFLAGS = 
-LDFLAGS = -L lib -l ssdboutputter -l ssdbreader -lpthread -g
+LDFLAGS = -L lib -l ssdboutputter -l ssdbreader -lpthread -g -O3
 OBJS    = compressor.o A_Regulation.o Homo_Regulation.o state_machine.o u_Regulation.o decompressor.o period.o
 COMPOBJS = compress_main.o
 DECOMPOBJS = decompress_main.o

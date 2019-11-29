@@ -306,8 +306,8 @@ void State_Machine::reset(){
 State_Machine::~State_Machine(){
     if(signal_idx >= 0)
         save_period();
-    std::cout << "Signal No." << signal_idx << "State Machine total head size(byte): " << debug_total_head_size_byte;
-    std::cout << " Period Number: " << period_count << std::endl;
+    // std::cout << "Signal No." << signal_idx << "State Machine total head size(byte): " << debug_total_head_size_byte;
+    // std::cout << " Period Number: " << period_count << std::endl;
     // delete regulator_u;
     // delete regulator_homo;
     // delete regulator_A;

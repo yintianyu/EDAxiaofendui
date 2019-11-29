@@ -91,10 +91,10 @@ int Decompressor::read_metadata (){
     }
     input_fstream.read((char*)&signal_count, sizeof(signal_count));
     signal_names.resize(signal_count);
-    std::cout << "Decompress signal names:" << std::endl;
+    // std::cout << "Decompress signal names:" << std::endl;
     for(int i = 0;i < signal_count;++i){
         input_fstream >> signal_names[i];
-        std::cout << signal_names[i] << std::endl;
+        // std::cout << signal_names[i] << std::endl;
     }
     char tmp;
     input_fstream.read((char*)&tmp, sizeof(char));
@@ -135,7 +135,9 @@ void Decompressor::_check(bool &ready, int &write_number){
 void Decompressor::_ready(int write_number, int &current_frame){
     for(int i = 0;i < write_number;++i){
         outputter.OutputXValue(Period::x_values[current_frame]);
+        #ifdef DEBUG
         std::cout << "[WRITE] time=" << Period::x_values[current_frame];
+        #endif
         for(auto &list_per_signal:output_buffer){
             #ifdef DEBUG
             std::cout << " " << list_per_signal.front();
@@ -143,7 +145,9 @@ void Decompressor::_ready(int write_number, int &current_frame){
             outputter.OutputSignalValue(list_per_signal.front());
             list_per_signal.pop();
         }
+        #ifdef DEBUG
         std::cout << std::endl;
+        #endif
         outputter.FinishOnePointData();
         current_frame += 1;
     }

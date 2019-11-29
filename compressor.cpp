@@ -43,7 +43,7 @@ void Compressor::compress(){
     char *buffer = new char[16 * 1024 * 1024]; // 16MB buffer
     std::streampos pos = tmp_input_fstream.tellg();
     tmp_input_fstream.seekg(0, std::ios::end);
-    int length = tmp_input_fstream.tellg();
+    long long length = tmp_input_fstream.tellg();
     tmp_input_fstream.seekg(pos);
     std::cout << "length=" << length << std::endl;
     while(length > 0){
